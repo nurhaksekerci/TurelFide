@@ -1,0 +1,29 @@
+ekimden sonra 21 gün serim
+İşlemler kaydedilecek tarihleriyle (İlaç, Gübre, vb.)
+Serim lokasyonu eklenecek
+Çimlenme yüzdesi serimde
+
+
+
+Ekim yeri yok! Palete ekliyor ekimden sonra serime lokasyon lazım
+
+
+Aşıda nem, ışık, hava 1 hafta kaydedilecek tekrar üretim serasına gelecek. Aşı tutma yüzdesi burada belirlenecek. 
+Kafa kesime gidecek ve 10 gün sonra Çift gövde tutma yüzdesi sisteme girilecek. 
+
+Anaçların değiştirilme ihtimali var hem ekimde hem aşılamada buna uygun çözüm bulunacak. Eski anaç gözükecek!
+
+
+Sonradan eklenecek !
+Stok takibi için
+
+Tohum paket + adet,
+gübre paket + adet + kg,
+ilaç paket + adet + ml,
+klips paket + adet,
+çubuk paket + adet,
+torf paket + adet,
+perlit adet + Litre,
+vermikülit adet + Litre,
+insert paket + adet + tip,
+viol paket + adet + tip

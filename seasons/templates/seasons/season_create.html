@@ -1,0 +1,126 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Yeni Sezon Oluştur - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-plus me-2"></i>Yeni Sezon Oluştur</h2>
+            <p class="text-muted">Yeni üretim sezonu tanımlayın</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'seasons:season_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Sezon Listesi
+            </a>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>Sezon Bilgileri
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">
+                                    <i class="fas fa-tag me-1"></i>Sezon Adı *
+                                </label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ request.POST.name }}" required
+                                       placeholder="Örn: 2024-2025 Sezonu">
+                                <div class="form-text">
+                                    Sezonun tanımlayıcı adını yazın
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="start_date" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>Başlangıç Tarihi *
+                                </label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" 
+                                       value="{{ request.POST.start_date }}" required>
+                                <div class="form-text">
+                                    Sezonun başlangıç tarihini seçin
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                           {% if request.POST.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        <i class="fas fa-toggle-on me-1"></i>Bu sezonu aktif yap
+                                    </label>
+                                    <div class="form-text">
+                                        Aktif sezon, siparişler için kullanılacak sezon olur. 
+                                        Aynı anda sadece bir sezon aktif olabilir.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Info Box -->
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>Bilgi</h6>
+                            <p class="mb-2">Sezon oluşturduktan sonra:</p>
+                            <ul class="mb-0">
+                                <li>Çeşit ve anaç kombinasyonları ekleyebilirsiniz</li>
+                                <li>18 aylık tek ve çift gövde fiyatları belirleyebilirsiniz</li>
+                                <li>Üretim sürelerini ayarlayabilirsiniz</li>
+                                <li>Toplu ürün oluşturma özelliğini kullanabilirsiniz</li>
+                            </ul>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'seasons:season_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>İptal
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Sezon Oluştur
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sezon adı otomatik doldurma
+    const startDateInput = document.getElementById('start_date');
+    const nameInput = document.getElementById('name');
+    
+    startDateInput.addEventListener('change', function() {
+        if (this.value && !nameInput.value) {
+            const startYear = new Date(this.value).getFullYear();
+            const endYear = startYear + 1;
+            nameInput.value = `${startYear}-${endYear} Sezonu`;
+        }
+    });
+});
+</script>
+{% endblock %} 

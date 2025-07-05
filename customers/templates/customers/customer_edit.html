@@ -1,0 +1,531 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ customer.get_full_name }} - Müşteri Düzenle - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'customers:list' %}">Müşteriler</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'customers:detail' customer.id %}">{{ customer.get_full_name }}</a></li>
+                    <li class="breadcrumb-item active">Düzenle</li>
+                </ol>
+            </nav>
+            <h2><i class="fas fa-user-edit me-2"></i>Müşteri Düzenle: {{ customer.get_full_name }}</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'customers:detail' customer.id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Geri Dön
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Müşteri Bilgilerini Düzenle
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="customerEditForm" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Personal Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-muted mb-3">
+                                    <i class="fas fa-user me-2"></i>Kişisel Bilgiler
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="first_name" class="form-label">Ad <span class="text-danger">*</span></label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="first_name" 
+                                           name="first_name" 
+                                           value="{{ customer.first_name }}"
+                                           required
+                                           placeholder="Müşterinin adı">
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="last_name" class="form-label">Soyad <span class="text-danger">*</span></label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="last_name" 
+                                           name="last_name" 
+                                           value="{{ customer.last_name }}"
+                                           required
+                                           placeholder="Müşterinin soyadı">
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="phone_number" class="form-label">Telefon Numarası <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">+90</span>
+                                        <input type="tel" 
+                                               class="form-control" 
+                                               id="phone_number" 
+                                               name="phone_number" 
+                                               value="{{ customer.phone_number }}"
+                                               required
+                                               placeholder="5XXXXXXXXX"
+                                               maxlength="10"
+                                               pattern="5[0-9]{9}">
+                                    </div>
+                                    <div class="form-text">Örnek: 5551234567</div>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="color" class="form-label">Müşteri Sınıfı</label>
+                                    <select class="form-select" id="color" name="color">
+                                        {% for color_code, color_name in color_choices %}
+                                        <option value="{{ color_code }}" 
+                                                {% if customer.color == color_code %}selected{% endif %}>
+                                            {{ color_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">Müşterinin öncelik sınıfını seçin</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Address Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-muted mb-3">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Adres Bilgileri
+                                </h6>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="city" class="form-label">Şehir <span class="text-danger">*</span></label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="city" 
+                                           name="city" 
+                                           value="{{ customer.city }}"
+                                           required
+                                           placeholder="İstanbul">
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="district" class="form-label">İlçe <span class="text-danger">*</span></label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="district" 
+                                           name="district" 
+                                           value="{{ customer.district }}"
+                                           required
+                                           placeholder="Kadıköy">
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="neighborhood" class="form-label">Mahalle</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="neighborhood" 
+                                           name="neighborhood" 
+                                           value="{{ customer.neighborhood }}"
+                                           placeholder="Fenerbahçe">
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="address" class="form-label">Detaylı Adres <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" 
+                                              id="address" 
+                                              name="address" 
+                                              rows="3" 
+                                              required
+                                              placeholder="Sokak, cadde, apartman no, daire no gibi detaylı adres bilgisi">{{ customer.address }}</textarea>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Color Preview -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-muted mb-3">
+                                    <i class="fas fa-palette me-2"></i>Sınıf Önizleme
+                                </h6>
+                                <div class="color-preview-card p-3 border rounded">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle me-3" id="colorPreview" style="background-color: {{ customer.color }};">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0" id="previewName">{{ customer.get_full_name }}</h6>
+                                            <span class="badge" id="previewBadge" style="background-color: {{ customer.color }}; color: white;">
+                                                {{ customer.color_category }} Sınıfı - {{ customer.color_display_name }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Change Summary -->
+                        <div class="row mb-4" id="changesSummary" style="display: none;">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <h6 class="alert-heading">
+                                        <i class="fas fa-info-circle me-2"></i>Yapılan Değişiklikler
+                                    </h6>
+                                    <ul id="changesList" class="mb-0"></ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{% url 'customers:detail' customer.id %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>İptal
+                                    </a>
+                                    <button type="submit" class="btn btn-warning" id="submitBtn" disabled>
+                                        <i class="fas fa-save me-2"></i>Değişiklikleri Kaydet
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.color-preview-card {
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.was-validated .form-control:valid {
+    border-color: var(--bs-success);
+}
+
+.was-validated .form-control:invalid {
+    border-color: var(--bs-danger);
+}
+
+.form-control.changed {
+    border-left: 4px solid var(--bs-warning);
+    background-color: #fff3cd;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+#phone_number {
+    font-family: monospace;
+}
+
+.changes-highlight {
+    background-color: #fff3cd !important;
+    border-left: 4px solid #ffc107 !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    const colorChoices = {
+        {% for color_code, color_name in color_choices %}
+        '{{ color_code }}': '{{ color_name }}',
+        {% endfor %}
+    };
+    
+    // Original values for change tracking
+    const originalValues = {
+        first_name: '{{ customer.first_name }}',
+        last_name: '{{ customer.last_name }}',
+        phone_number: '{{ customer.phone_number }}',
+        city: '{{ customer.city }}',
+        district: '{{ customer.district }}',
+        neighborhood: '{{ customer.neighborhood }}',
+        address: '{{ customer.address|escapejs }}',
+        color: '{{ customer.color }}'
+    };
+    
+    let hasChanges = false;
+    
+    // Color preview update
+    function updateColorPreview() {
+        const selectedColor = $('#color').val();
+        const colorName = colorChoices[selectedColor];
+        const firstName = $('#first_name').val() || 'Örnek';
+        const lastName = $('#last_name').val() || 'Müşteri';
+        
+        // Get color category (A, B, C, etc.)
+        let category = 'D';
+        if (selectedColor === '#0d5016') category = 'A';
+        else if (selectedColor === '#2c9c3e') category = 'B';
+        else if (selectedColor === '#8bc34a') category = 'C';
+        else if (selectedColor === '#ffeb3b') category = 'D';
+        else if (selectedColor === '#ff9800') category = 'E';
+        else if (selectedColor === '#ff5722') category = 'F';
+        else if (selectedColor === '#d32f2f') category = 'G';
+        
+        $('#colorPreview').css('background-color', selectedColor);
+        $('#previewName').text(`${firstName} ${lastName}`.trim());
+        $('#previewBadge').css('background-color', selectedColor)
+                          .text(`${category} Sınıfı - ${colorName}`);
+    }
+    
+    // Track changes
+    function trackChanges() {
+        const changes = [];
+        hasChanges = false;
+        
+        Object.keys(originalValues).forEach(field => {
+            let currentValue = $(`#${field}`).val() || '';
+            let originalValue = originalValues[field] || '';
+            
+            // Special handling for textarea
+            if (field === 'address') {
+                currentValue = currentValue.trim();
+                originalValue = originalValue.trim();
+            }
+            
+            if (currentValue !== originalValue) {
+                hasChanges = true;
+                $(`#${field}`).addClass('changed');
+                
+                let fieldName = $(`label[for="${field}"]`).text().replace(' *', '');
+                let changeText = `${fieldName}: "${originalValue}" → "${currentValue}"`;
+                
+                // Special formatting for color
+                if (field === 'color') {
+                    const oldColorName = colorChoices[originalValue];
+                    const newColorName = colorChoices[currentValue];
+                    changeText = `${fieldName}: "${oldColorName}" → "${newColorName}"`;
+                }
+                
+                changes.push(changeText);
+            } else {
+                $(`#${field}`).removeClass('changed');
+            }
+        });
+        
+        // Update changes summary
+        if (hasChanges) {
+            $('#changesList').html('');
+            changes.forEach(change => {
+                $('#changesList').append(`<li>${change}</li>`);
+            });
+            $('#changesSummary').show();
+            $('#submitBtn').prop('disabled', false);
+        } else {
+            $('#changesSummary').hide();
+            $('#submitBtn').prop('disabled', true);
+        }
+    }
+    
+    // Update preview on input change
+    $('#color, #first_name, #last_name').on('change input', function() {
+        updateColorPreview();
+        trackChanges();
+    });
+    
+    // Track changes on all form fields
+    $('input, textarea, select').on('input change', trackChanges);
+    
+    // Phone number formatting and validation
+    $('#phone_number').on('input', function() {
+        let value = $(this).val().replace(/\D/g, ''); // Remove non-digits
+        
+        // Limit to 10 digits and ensure it starts with 5
+        if (value.length > 10) {
+            value = value.substring(0, 10);
+        }
+        
+        $(this).val(value);
+        
+        // Validate phone number
+        const isValid = /^5[0-9]{9}$/.test(value);
+        
+        if (value.length > 0) {
+            if (isValid) {
+                $(this).removeClass('is-invalid').addClass('is-valid');
+                $(this).siblings('.invalid-feedback').text('');
+            } else {
+                $(this).removeClass('is-valid').addClass('is-invalid');
+                if (value.length < 10) {
+                    $(this).siblings('.invalid-feedback').text('Telefon numarası 10 haneli olmalıdır');
+                } else if (!value.startsWith('5')) {
+                    $(this).siblings('.invalid-feedback').text('Telefon numarası 5 ile başlamalıdır');
+                } else {
+                    $(this).siblings('.invalid-feedback').text('Geçersiz telefon numarası formatı');
+                }
+            }
+        } else {
+            $(this).removeClass('is-valid is-invalid');
+        }
+        
+        trackChanges();
+    });
+    
+    // Real-time validation for required fields
+    $('input[required], textarea[required]').on('blur', function() {
+        const field = $(this);
+        const value = field.val().trim();
+        
+        if (value === '') {
+            field.removeClass('is-valid').addClass('is-invalid');
+            field.siblings('.invalid-feedback').text('Bu alan gereklidir');
+        } else {
+            field.removeClass('is-invalid').addClass('is-valid');
+            field.siblings('.invalid-feedback').text('');
+        }
+    });
+    
+    // Form submission with validation
+    $('#customerEditForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        if (!hasChanges) {
+            showNotification('Henüz hiçbir değişiklik yapmadınız', 'warning');
+            return;
+        }
+        
+        // Reset validation states
+        $('.is-invalid, .is-valid').removeClass('is-invalid is-valid');
+        $('.invalid-feedback').text('');
+        
+        let isValid = true;
+        const errors = [];
+        
+        // Validate required fields
+        $('input[required], textarea[required]').each(function() {
+            const field = $(this);
+            const value = field.val().trim();
+            
+            if (value === '') {
+                field.addClass('is-invalid');
+                field.siblings('.invalid-feedback').text('Bu alan gereklidir');
+                isValid = false;
+                errors.push(`${field.prev('label').text().replace(' *', '')} alanı gereklidir`);
+            } else {
+                field.addClass('is-valid');
+            }
+        });
+        
+        // Validate phone number specifically
+        const phoneValue = $('#phone_number').val();
+        const phoneRegex = /^5[0-9]{9}$/;
+        
+        if (phoneValue && !phoneRegex.test(phoneValue)) {
+            $('#phone_number').addClass('is-invalid');
+            $('#phone_number').siblings('.invalid-feedback').text('Geçerli bir telefon numarası girin (5XXXXXXXXX)');
+            isValid = false;
+            errors.push('Geçerli bir telefon numarası girin');
+        }
+        
+        if (!isValid) {
+            showNotification(`Lütfen formdaki hataları düzeltin:\n${errors.join('\n')}`, 'error');
+            // Scroll to first error
+            const firstError = $('.is-invalid').first();
+            if (firstError.length) {
+                $('html, body').animate({
+                    scrollTop: firstError.offset().top - 100
+                }, 500);
+                firstError.focus();
+            }
+            return;
+        }
+        
+        // Confirm changes
+        if (!confirm('Değişiklikleri kaydetmek istediğinizden emin misiniz?')) {
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = $('#submitBtn');
+        setButtonLoading(submitBtn, true);
+        
+        // Submit form
+        this.submit();
+    });
+    
+    // Auto-capitalize names
+    $('#first_name, #last_name, #city, #district, #neighborhood').on('blur', function() {
+        const value = $(this).val();
+        if (value) {
+            $(this).val(value.charAt(0).toUpperCase() + value.slice(1).toLowerCase());
+            updateColorPreview();
+            trackChanges();
+        }
+    });
+    
+    // Warn before leaving page if there are unsaved changes
+    window.addEventListener('beforeunload', function(e) {
+        if (hasChanges) {
+            e.preventDefault();
+            e.returnValue = 'Kaydedilmemiş değişiklikleriniz var. Sayfadan ayrılmak istediğinizden emin misiniz?';
+            return e.returnValue;
+        }
+    });
+    
+    // Initialize
+    updateColorPreview();
+});
+
+// Helper function for button loading state
+function setButtonLoading(button, loading) {
+    if (loading) {
+        button.prop('disabled', true);
+        const originalText = button.html();
+        button.data('original-text', originalText);
+        button.html('<i class="fas fa-spinner fa-spin me-2"></i>Kaydediliyor...');
+    } else {
+        button.prop('disabled', false);
+        const originalText = button.data('original-text');
+        if (originalText) {
+            button.html(originalText);
+        }
+    }
+}
+</script>
+{% endblock %} 

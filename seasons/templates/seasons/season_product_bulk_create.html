@@ -1,0 +1,523 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ season.name }} - Toplu Ürün Ekle - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-plus-circle me-2"></i>Toplu Ürün Ekle</h2>
+            <p class="text-muted"><strong>{{ season.name }}</strong> sezonu için birden fazla çeşit-anaç kombinasyonu oluşturun</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'seasons:season_product_list' season.id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Ürün Listesi
+            </a>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-seedling me-2"></i>Toplu Ürün Oluşturma
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Selection Method -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6><i class="fas fa-list me-2"></i>Ürün Seçimi</h6>
+                                <p class="text-muted">Çeşitleri ve anaçları seçerek otomatik kombinasyonlar oluşturun</p>
+                            </div>
+                        </div>
+
+                        <!-- Varieties Selection -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-spa me-2"></i>Çeşitler
+                                            </h6>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="select-all-varieties">
+                                                <label class="form-check-label" for="select-all-varieties">
+                                                    Tümünü Seç
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                                        {% regroup varieties by species as species_groups %}
+                                        {% for species_group in species_groups %}
+                                        <div class="mb-3">
+                                            <h6 class="text-primary">{{ species_group.grouper.name }}</h6>
+                                            {% for variety in species_group.list %}
+                                            <div class="form-check">
+                                                <input class="form-check-input variety-checkbox" type="checkbox" 
+                                                       name="varieties" value="{{ variety.id }}" 
+                                                       id="variety_{{ variety.id }}">
+                                                <label class="form-check-label" for="variety_{{ variety.id }}">
+                                                    {{ variety.get_full_name }}
+                                                </label>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Rootstocks Selection -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-tree me-2"></i>Anaçlar
+                                            </h6>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="select-all-rootstocks">
+                                                <label class="form-check-label" for="select-all-rootstocks">
+                                                    Tümünü Seç
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input rootstock-checkbox" type="checkbox" 
+                                                   name="rootstocks" value="" id="rootstock_none">
+                                            <label class="form-check-label" for="rootstock_none">
+                                                <em>Anaçsız Ürün</em>
+                                            </label>
+                                        </div>
+                                        <hr>
+                                        {% for rootstock in rootstocks %}
+                                        <div class="form-check">
+                                            <input class="form-check-input rootstock-checkbox" type="checkbox" 
+                                                   name="rootstocks" value="{{ rootstock.id }}" 
+                                                   id="rootstock_{{ rootstock.id }}">
+                                            <label class="form-check-label" for="rootstock_{{ rootstock.id }}">
+                                                {{ rootstock.name }}
+                                            </label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Duration Settings -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-clock me-2"></i>Varsayılan Üretim Süreleri (Gün)
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="text-muted">Tüm ürünler için kullanılacak varsayılan süreler</p>
+                                        <div class="row">
+                                            {% for field, label in duration_fields.items %}
+                                            <div class="col-md-4 mb-3">
+                                                <label for="{{ field }}" class="form-label">{{ label }}</label>
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control duration-input" 
+                                                           id="{{ field }}" name="{{ field }}" 
+                                                           value="{% if field == 'rootstock_planting_duration' %}30{% elif field == 'scion_planting_duration' %}45{% elif field == 'single_stem_grafting_duration' %}60{% elif field == 'double_stem_grafting_duration' %}75{% elif field == 'head_formation_duration' %}90{% elif field == 'waiting_on_room_duration' %}30{% endif %}" 
+                                                           min="1" required>
+                                                    <span class="input-group-text">gün</span>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        
+                                        <!-- Totals -->
+                                        <div class="alert alert-info mt-3">
+                                            <h6><i class="fas fa-calculator me-2"></i>Toplam Üretim Süreleri</h6>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span>Tek Gövde Toplam:</span>
+                                                        <strong id="single-total">-</strong>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span>Çift Gövde Toplam:</span>
+                                                        <strong id="double-total">-</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pricing Settings -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-money-bill me-2"></i>Varsayılan Fiyatlandırma (İsteğe Bağlı)
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="text-muted">Tüm ürünler için kullanılacak varsayılan fiyatlar. Sonra tek tek düzenleyebilirsiniz.</p>
+                                        
+                                        <!-- Hızlı Fiyat Araçları -->
+                                        <div class="row mb-4">
+                                            <div class="col-md-6">
+                                                <h6 class="text-primary mb-3"><i class="fas fa-seedling me-2"></i>Tek Gövde Araçları</h6>
+                                                
+                                                <!-- Sabit Fiyat -->
+                                                <div class="mb-3">
+                                                    <label class="form-label">Tüm Aylara Aynı Fiyat</label>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control" id="bulk-single-price" 
+                                                               step="0.01" min="0" placeholder="0.00">
+                                                        <button type="button" class="btn btn-outline-primary" 
+                                                                onclick="bulkFillSingle()">Uygula</button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Aylık Artış -->
+                                                <div class="mb-3">
+                                                    <label class="form-label">Aylık Artışlı Fiyat</label>
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <input type="number" class="form-control" id="single-start-price" 
+                                                                   step="0.01" min="0" placeholder="Başlangıç (TL)">
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <div class="input-group">
+                                                                <input type="number" class="form-control" id="single-increase-rate" 
+                                                                       step="0.1" min="0" placeholder="Artış">
+                                                                <span class="input-group-text">%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button" class="btn btn-outline-success mt-2 w-100" 
+                                                            onclick="applyMonthlyIncreaseSingle()">
+                                                        <i class="fas fa-chart-line me-2"></i>Aylık Artış Uygula
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <h6 class="text-info mb-3"><i class="fas fa-tree me-2"></i>Çift Gövde Araçları</h6>
+                                                
+                                                <!-- Sabit Fiyat -->
+                                                <div class="mb-3">
+                                                    <label class="form-label">Tüm Aylara Aynı Fiyat</label>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control" id="bulk-double-price" 
+                                                               step="0.01" min="0" placeholder="0.00">
+                                                        <button type="button" class="btn btn-outline-info" 
+                                                                onclick="bulkFillDouble()">Uygula</button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Aylık Artış -->
+                                                <div class="mb-3">
+                                                    <label class="form-label">Aylık Artışlı Fiyat</label>
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <input type="number" class="form-control" id="double-start-price" 
+                                                                   step="0.01" min="0" placeholder="Başlangıç (TL)">
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <div class="input-group">
+                                                                <input type="number" class="form-control" id="double-increase-rate" 
+                                                                       step="0.1" min="0" placeholder="Artış">
+                                                                <span class="input-group-text">%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button" class="btn btn-outline-success mt-2 w-100" 
+                                                            onclick="applyMonthlyIncreaseDouble()">
+                                                        <i class="fas fa-chart-line me-2"></i>Aylık Artış Uygula
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Fiyat Tabloları -->
+                                        <div class="row">
+                                            <!-- Tek Gövde Fiyatları -->
+                                            <div class="col-md-6">
+                                                <div class="card">
+                                                    <div class="card-header bg-primary text-white">
+                                                        <h6 class="mb-0">
+                                                            <i class="fas fa-seedling me-2"></i>Tek Gövde Fiyatları
+                                                        </h6>
+                                                    </div>
+                                                    <div class="card-body p-0">
+                                                        <table class="table table-sm mb-0">
+                                                            <tbody>
+                                                                <tr><td><strong>1. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_1" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>2. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_2" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>3. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_3" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>4. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_4" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>5. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_5" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>6. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_6" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>7. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_7" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>8. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_8" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>9. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_9" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>10. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_10" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>11. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_11" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>12. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_12" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>13. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_13" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>14. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_14" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>15. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_15" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>16. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_16" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>17. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_17" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>18. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_18" value="0" step="0.01" min="0"></td></tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Çift Gövde Fiyatları -->
+                                            <div class="col-md-6">
+                                                <div class="card">
+                                                    <div class="card-header bg-info text-white">
+                                                        <h6 class="mb-0">
+                                                            <i class="fas fa-tree me-2"></i>Çift Gövde Fiyatları
+                                                        </h6>
+                                                    </div>
+                                                    <div class="card-body p-0">
+                                                        <table class="table table-sm mb-0">
+                                                            <tbody>
+                                                                <tr><td><strong>1. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_1" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>2. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_2" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>3. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_3" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>4. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_4" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>5. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_5" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>6. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_6" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>7. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_7" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>8. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_8" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>9. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_9" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>10. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_10" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>11. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_11" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>12. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_12" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>13. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_13" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>14. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_14" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>15. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_15" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>16. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_16" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>17. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_17" value="0" step="0.01" min="0"></td></tr>
+                                                                <tr><td><strong>18. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_18" value="0" step="0.01" min="0"></td></tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-eye me-2"></i>Oluşturulacak Ürünler Önizlemesi
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="alert alert-warning">
+                                            <strong id="combination-count">0</strong> adet ürün kombinasyonu oluşturulacak.
+                                            <div id="combination-preview" class="mt-2" style="display: none;">
+                                                <small class="text-muted">Seçiminizi yapınca önizleme burada görünecek</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'seasons:season_product_list' season.id %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>İptal
+                            </a>
+                            <button type="submit" class="btn btn-success" id="create-btn" disabled>
+                                <i class="fas fa-save me-2"></i>Ürünleri Oluştur
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Select All functionality
+document.getElementById('select-all-varieties').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.variety-checkbox');
+    checkboxes.forEach(cb => cb.checked = this.checked);
+    updatePreview();
+});
+
+document.getElementById('select-all-rootstocks').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.rootstock-checkbox');
+    checkboxes.forEach(cb => cb.checked = this.checked);
+    updatePreview();
+});
+
+// Toplam süre hesaplama
+function calculateTotals() {
+    const rootstock = parseInt(document.querySelector('[name="rootstock_planting_duration"]').value) || 0;
+    const scion = parseInt(document.querySelector('[name="scion_planting_duration"]').value) || 0;
+    const head = parseInt(document.querySelector('[name="head_formation_duration"]').value) || 0;
+    const waiting = parseInt(document.querySelector('[name="waiting_on_room_duration"]').value) || 0;
+    const singleGraft = parseInt(document.querySelector('[name="single_stem_grafting_duration"]').value) || 0;
+    const doubleGraft = parseInt(document.querySelector('[name="double_stem_grafting_duration"]').value) || 0;
+    
+    const singleTotal = rootstock + scion + head + waiting + singleGraft;
+    const doubleTotal = rootstock + scion + head + waiting + doubleGraft;
+    
+    document.getElementById('single-total').textContent = singleTotal + ' gün';
+    document.getElementById('double-total').textContent = doubleTotal + ' gün';
+}
+
+// Fiyat araçları
+function bulkFillSingle() {
+    const price = document.getElementById('bulk-single-price').value;
+    if (price) {
+        for (let i = 1; i <= 18; i++) {
+            const input = document.querySelector(`[name="price_single_stem_${i}"]`);
+            if (input) input.value = price;
+        }
+    }
+}
+
+function bulkFillDouble() {
+    const price = document.getElementById('bulk-double-price').value;
+    if (price) {
+        for (let i = 1; i <= 18; i++) {
+            const input = document.querySelector(`[name="price_double_stem_${i}"]`);
+            if (input) input.value = price;
+        }
+    }
+}
+
+function applyMonthlyIncreaseSingle() {
+    const startPrice = parseFloat(document.getElementById('single-start-price').value);
+    const increaseRate = parseFloat(document.getElementById('single-increase-rate').value);
+    
+    if (startPrice && increaseRate) {
+        for (let i = 1; i <= 18; i++) {
+            const input = document.querySelector(`[name="price_single_stem_${i}"]`);
+            if (input) {
+                // Her ay için kümülatif artış hesapla: başlangıç_fiyat * (1 + artış_oranı/100)^(ay-1)
+                const monthlyPrice = startPrice * Math.pow((1 + increaseRate / 100), (i - 1));
+                input.value = monthlyPrice.toFixed(2);
+            }
+        }
+        alert(`Tek gövde için aylık %${increaseRate} artışlı fiyatlar uygulandı.`);
+    } else {
+        alert('Lütfen başlangıç fiyatı ve artış oranını giriniz.');
+    }
+}
+
+function applyMonthlyIncreaseDouble() {
+    const startPrice = parseFloat(document.getElementById('double-start-price').value);
+    const increaseRate = parseFloat(document.getElementById('double-increase-rate').value);
+    
+    if (startPrice && increaseRate) {
+        for (let i = 1; i <= 18; i++) {
+            const input = document.querySelector(`[name="price_double_stem_${i}"]`);
+            if (input) {
+                // Her ay için kümülatif artış hesapla: başlangıç_fiyat * (1 + artış_oranı/100)^(ay-1)
+                const monthlyPrice = startPrice * Math.pow((1 + increaseRate / 100), (i - 1));
+                input.value = monthlyPrice.toFixed(2);
+            }
+        }
+        alert(`Çift gövde için aylık %${increaseRate} artışlı fiyatlar uygulandı.`);
+    } else {
+        alert('Lütfen başlangıç fiyatı ve artış oranını giriniz.');
+    }
+}
+
+// Önizleme güncelleme
+function updatePreview() {
+    const selectedVarieties = document.querySelectorAll('.variety-checkbox:checked').length;
+    const selectedRootstocks = document.querySelectorAll('.rootstock-checkbox:checked').length;
+    
+    const totalCombinations = selectedVarieties * Math.max(selectedRootstocks, 1);
+    
+    document.getElementById('combination-count').textContent = totalCombinations;
+    
+    // Create button enable/disable
+    const createBtn = document.getElementById('create-btn');
+    if (selectedVarieties > 0) {
+        createBtn.disabled = false;
+        createBtn.classList.remove('btn-secondary');
+        createBtn.classList.add('btn-success');
+    } else {
+        createBtn.disabled = true;
+        createBtn.classList.remove('btn-success');
+        createBtn.classList.add('btn-secondary');
+    }
+    
+    // Preview details
+    const previewDiv = document.getElementById('combination-preview');
+    if (totalCombinations > 0) {
+        previewDiv.style.display = 'block';
+        previewDiv.innerHTML = `
+            <small class="text-muted">
+                ${selectedVarieties} çeşit × ${Math.max(selectedRootstocks, 1)} anaç seçeneği = 
+                <strong>${totalCombinations} ürün</strong>
+            </small>
+        `;
+    } else {
+        previewDiv.style.display = 'none';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Duration inputs için event listener
+    const durationInputs = document.querySelectorAll('.duration-input');
+    durationInputs.forEach(input => {
+        input.addEventListener('input', calculateTotals);
+    });
+    
+    // Checkbox değişikliklerini dinle
+    const allCheckboxes = document.querySelectorAll('.variety-checkbox, .rootstock-checkbox');
+    allCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updatePreview);
+    });
+    
+    // İlk hesaplamalar
+    calculateTotals();
+    updatePreview();
+});
+</script>
+{% endblock %} 

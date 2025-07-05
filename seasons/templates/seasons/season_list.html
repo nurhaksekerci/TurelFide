@@ -1,0 +1,198 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Sezon Listesi - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-calendar-alt me-2"></i>Sezon Yönetimi</h2>
+            <p class="text-muted">Üretim sezonlarını ve fiyatlandırmalarını yönetin</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'seasons:season_create' %}" class="btn btn-success">
+                <i class="fas fa-plus me-2"></i>Yeni Sezon Ekle
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ seasons|length }}</h4>
+                            <span>Toplam Sezon</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{% for season in seasons %}{% if season.is_active %}1{% endif %}{% endfor %}</h4>
+                            <span>Aktif Sezon</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>
+                                {% for season in seasons %}
+                                    {% if season.is_active %}{{ season.stats.total_products|default:0 }}{% endif %}
+                                {% endfor %}
+                            </h4>
+                            <span>Aktif Sezon Ürünleri</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-seedling fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ seasons|length|add:"-1" }}</h4>
+                            <span>Geçmiş Sezonlar</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-history fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seasons List -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Sezonlar
+                </h5>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if seasons %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Sezon Adı</th>
+                            <th>Başlangıç Tarihi</th>
+                            <th>Durum</th>
+                            <th>Ürün Sayısı</th>
+                            <th>Çeşit Sayısı</th>
+                            <th>Tamamlanma</th>
+                            <th width="200">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for season in seasons %}
+                        <tr {% if season.is_active %}class="table-success"{% endif %}>
+                            <td>
+                                <a href="{% url 'seasons:season_detail' season.id %}" class="text-decoration-none">
+                                    <strong>{{ season.name }}</strong>
+                                    {% if season.is_active %}
+                                        <span class="badge bg-success ms-2">AKTİF</span>
+                                    {% endif %}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="text-muted">{{ season.start_date|date:"d.m.Y" }}</span>
+                            </td>
+                            <td>
+                                {% if season.is_active %}
+                                    <span class="badge bg-success">Aktif</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Pasif</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ season.stats.total_products|default:0 }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ season.stats.total_varieties|default:0 }}</span>
+                            </td>
+                            <td>
+                                {% with completeness=season.completeness.completeness_percentage|default:0 %}
+                                <div class="progress" style="width: 80px; height: 20px;">
+                                    <div class="progress-bar 
+                                        {% if completeness >= 80 %}bg-success
+                                        {% elif completeness >= 50 %}bg-warning
+                                        {% else %}bg-danger{% endif %}" 
+                                        role="progressbar" style="width: {{ completeness }}%">
+                                        {{ completeness }}%
+                                    </div>
+                                </div>
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'seasons:season_detail' season.id %}" 
+                                       class="btn btn-outline-primary" title="Detaylar">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'seasons:season_product_list' season.id %}" 
+                                       class="btn btn-outline-info" title="Ürünler">
+                                        <i class="fas fa-seedling"></i>
+                                    </a>
+                                    {% if not season.is_active %}
+                                    <form method="post" action="{% url 'seasons:season_activate' season.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-success" 
+                                                title="Aktif Yap" onclick="return confirm('Bu sezonu aktif yapmak istediğinizden emin misiniz?')">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    <a href="{% url 'seasons:season_export' season.id %}" 
+                                       class="btn btn-outline-secondary" title="Dışa Aktar">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-alt fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">Hiç sezon bulunamadı</h5>
+                <p class="text-muted">Henüz hiç sezon eklenmemiş.</p>
+                <a href="{% url 'seasons:season_create' %}" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>İlk Sezonu Ekleyin
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

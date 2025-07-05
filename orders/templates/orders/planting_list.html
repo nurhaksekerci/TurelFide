@@ -1,0 +1,418 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ season.name }} - Ekim Takip{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-badge {
+        font-size: 0.8em;
+        padding: 0.25em 0.5em;
+    }
+    
+    .urgency-badge {
+        font-size: 0.7em;
+        padding: 0.2em 0.4em;
+    }
+    
+    .table-sm td {
+        padding: 0.5rem 0.25rem;
+        vertical-align: middle;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>
+                <i class="fas fa-seedling me-2"></i>{{ season.name }} - Ekim Takip
+                {% if season.is_active %}
+                    <span class="badge bg-success ms-2">AKTİF</span>
+                {% endif %}
+            </h2>
+            <p class="text-muted">Ekim talep kartları ve ilerleme durumu</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{% url 'orders:order_list' season.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-shopping-cart me-2"></i>Siparişler
+                </a>
+                <a href="{% url 'orders:season_statistics' season.id %}" class="btn btn-outline-info">
+                    <i class="fas fa-chart-bar me-2"></i>İstatistikler
+                </a>
+            </div>
+            <div class="mt-2">
+                <a href="{% url 'orders:season_selection' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i>Sezon Seçimi
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h4>{{ stats.total_requests }}</h4>
+                    <span>Toplam Talep</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-2">
+            <div class="card bg-secondary text-white">
+                <div class="card-body text-center">
+                    <h4>{{ stats.pending_requests }}</h4>
+                    <span>Bekliyor</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-2">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <h4>{{ stats.sent_requests }}</h4>
+                    <span>Gönderildi</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-2">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h4>{{ stats.confirmed_requests }}</h4>
+                    <span>Onaylandı</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-2">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h4>{{ stats.planted_requests }}</h4>
+                    <span>Ekildi</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-2">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <h4>{{ stats.overdue_requests }}</h4>
+                    <span>Geciken</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filtreler</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Durum</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">Tümü</option>
+                        {% for choice in status_choices %}
+                            <option value="{{ choice.0 }}" {% if status_filter == choice.0 %}selected{% endif %}>
+                                {{ choice.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="planting_type" class="form-label">Ekim Türü</label>
+                    <select name="planting_type" id="planting_type" class="form-select">
+                        <option value="">Tümü</option>
+                        {% for choice in planting_type_choices %}
+                            <option value="{{ choice.0 }}" {% if planting_type_filter == choice.0 %}selected{% endif %}>
+                                {{ choice.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="area" class="form-label">Ekim Alanı</label>
+                    <select name="area" id="area" class="form-select">
+                        <option value="">Tümü</option>
+                        {% for area in planting_areas %}
+                            <option value="{{ area }}" {% if area_filter == area %}selected{% endif %}>{{ area }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_filter" class="form-label">Tarih</label>
+                    <select name="date_filter" id="date_filter" class="form-select">
+                        <option value="">Tümü</option>
+                        <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Bugün</option>
+                        <option value="this_week" {% if date_filter == 'this_week' %}selected{% endif %}>Bu Hafta</option>
+                        <option value="overdue" {% if date_filter == 'overdue' %}selected{% endif %}>Geciken</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>Filtrele
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <a href="{% url 'orders:planting_list' season.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Temizle
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Planting Requests List -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>Ekim Talep Kartları
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            {% if planting_requests %}
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>TALEP NO</th>
+                            <th>TÜR</th>
+                            <th>ÜRÜN</th>
+                            <th>ANAÇ</th>
+                            <th>DURUM</th>
+                            <th>EKİM TARİHİ</th>
+                            <th>KALAN SÜRE</th>
+                            <th>EKİM ADEDİ</th>
+                            <th>SİPARİŞ TOPLAMI</th>
+                            <th>ALAN</th>
+                            <th>LOKASYON</th>
+                            <th>İŞLEMLER</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in planting_requests %}
+                        <tr>
+                            <td>
+                                <strong>{{ request.request_number }}</strong>
+                                <br><small class="text-muted">{{ request.created_at|date:"d.m.Y" }}</small>
+                            </td>
+                            <td>
+                                {% if request.planting_type == 'rootstock' %}
+                                    <span class="badge bg-success status-badge">{{ request.get_planting_type_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-primary status-badge">{{ request.get_planting_type_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ request.variety.get_full_name }}</td>
+                            <td>{{ request.rootstock.name|default:"Anaçsız" }}</td>
+                            <td>
+                                {% if request.status == 'pending' %}
+                                    <span class="badge bg-secondary status-badge">{{ request.get_status_display }}</span>
+                                {% elif request.status == 'sent' %}
+                                    <span class="badge bg-warning status-badge">{{ request.get_status_display }}</span>
+                                {% elif request.status == 'confirmed' %}
+                                    <span class="badge bg-info status-badge">{{ request.get_status_display }}</span>
+                                {% elif request.status == 'planted' %}
+                                    <span class="badge bg-success status-badge">{{ request.get_status_display }}</span>
+                                {% elif request.status == 'completed' %}
+                                    <span class="badge bg-success status-badge">{{ request.get_status_display }}</span>
+                                {% elif request.status == 'cancelled' %}
+                                    <span class="badge bg-danger status-badge">{{ request.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ request.requested_planting_date|date:"d.m.Y" }}
+                                {% if request.actual_planting_date %}
+                                    <br><small class="text-success">Ekildi: {{ request.actual_planting_date|date:"d.m.Y" }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if request.days_until_planting is not None %}
+                                    {% if request.days_until_planting < 0 %}
+                                        <span class="badge bg-danger urgency-badge">{{ request.days_until_planting|stringformat:"d"|slice:"1:" }}g GECİKMİŞ</span>
+                                    {% elif request.days_until_planting == 0 %}
+                                        <span class="badge bg-warning urgency-badge">BUGÜN</span>
+                                    {% elif request.days_until_planting <= 3 %}
+                                        <span class="badge bg-warning urgency-badge">{{ request.days_until_planting }} GÜN</span>
+                                    {% else %}
+                                        <span class="badge bg-info urgency-badge">{{ request.days_until_planting }} GÜN</span>
+                                    {% endif %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ request.planting_quantity }}</strong> fide
+                            </td>
+                            <td>
+                                {{ request.total_quantity }} fide
+                                <br><small class="text-muted">{{ request.total_viol_count }} viol</small>
+                            </td>
+                            <td>{{ request.planting_area|default:"-" }}</td>
+                            <td>{{ request.planting_location|default:"-" }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'orders:planting_detail' season.id request.id %}" 
+                                       class="btn btn-outline-info" 
+                                       title="Detay Görüntüle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-primary" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#statusModal{{ request.id }}"
+                                            title="Durum Güncelle">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if planting_requests.has_other_pages %}
+            <div class="card-footer">
+                <nav aria-label="Sayfa navigasyonu">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if planting_requests.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ planting_requests.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if planting_type_filter %}&planting_type={{ planting_type_filter }}{% endif %}{% if area_filter %}&area={{ area_filter }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in planting_requests.paginator.page_range %}
+                            {% if planting_requests.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > planting_requests.number|add:'-3' and num < planting_requests.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if planting_type_filter %}&planting_type={{ planting_type_filter }}{% endif %}{% if area_filter %}&area={{ area_filter }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if planting_requests.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ planting_requests.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if planting_type_filter %}&planting_type={{ planting_type_filter }}{% endif %}{% if area_filter %}&area={{ area_filter }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-seedling fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">Henüz ekim talebi bulunamadı</h5>
+                <p class="text-muted">Bu sezon için henüz hiç ekim talebi oluşturulmamış.</p>
+                <a href="{% url 'orders:order_list' season.id %}" class="btn btn-primary">
+                    <i class="fas fa-shopping-cart me-2"></i>Siparişlere Git
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Status Update Modals -->
+{% for request in planting_requests %}
+<div class="modal fade" id="statusModal{{ request.id }}" tabindex="-1" aria-labelledby="statusModalLabel{{ request.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="statusModalLabel{{ request.id }}">
+                    Durum Güncelle - {{ request.request_number }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{% url 'orders:planting_status_update' season.id request.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <strong>{{ request.variety.get_full_name }}</strong>
+                            {% if request.rootstock %}
+                                - {{ request.rootstock.name }}
+                            {% endif %}
+                            <br><small class="text-muted">{{ request.get_planting_type_display }}</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="status{{ request.id }}" class="form-label">Yeni Durum</label>
+                            <select name="status" id="status{{ request.id }}" class="form-select" required>
+                                {% for choice in status_choices %}
+                                    <option value="{{ choice.0 }}" {% if request.status == choice.0 %}selected{% endif %}>
+                                        {{ choice.1 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="actual_date{{ request.id }}" class="form-label">Gerçek Ekim Tarihi</label>
+                            <input type="date" name="actual_date" id="actual_date{{ request.id }}" 
+                                   class="form-control" value="{{ request.actual_planting_date|date:'Y-m-d' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="area{{ request.id }}" class="form-label">Ekim Alanı</label>
+                            <input type="text" name="area" id="area{{ request.id }}" 
+                                   class="form-control" value="{{ request.planting_area }}" 
+                                   placeholder="A Serası, B Bloku">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="location{{ request.id }}" class="form-label">Ekim Lokasyonu</label>
+                            <input type="text" name="location" id="location{{ request.id }}" 
+                                   class="form-control" value="{{ request.planting_location }}" 
+                                   placeholder="Sıra 1, Bölüm A">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes{{ request.id }}" class="form-label">Notlar</label>
+                        <textarea name="notes" id="notes{{ request.id }}" class="form-control" rows="3" 
+                                  placeholder="Durum değişikliği ile ilgili notlar..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Güncelle
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %} 

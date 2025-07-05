@@ -1,0 +1,484 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ season_product.variety.get_full_name }} - Ürün Düzenle - TurelFide{% endblock %}
+
+{% block extra_css %}
+<style>
+.price-input {
+    width: 100px;
+}
+.duration-input {
+    width: 80px;
+}
+.price-table th, .price-table td {
+    text-align: center;
+    vertical-align: middle;
+}
+.tab-content {
+    border: 1px solid #dee2e6;
+    border-top: none;
+    padding: 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-edit me-2"></i>Ürün Düzenle</h2>
+            <p class="text-muted">
+                <strong>{{ season.name }}</strong> - {{ season_product.variety.get_full_name }}
+                {% if season_product.rootstock %} ({{ season_product.rootstock.name }}){% endif %}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'seasons:season_product_list' season.id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Ürün Listesi
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" id="editTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="durations-tab" data-bs-toggle="tab" 
+                    data-bs-target="#durations" type="button" role="tab">
+                <i class="fas fa-clock me-2"></i>Üretim Süreleri
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="prices-tab" data-bs-toggle="tab" 
+                    data-bs-target="#prices" type="button" role="tab">
+                <i class="fas fa-money-bill me-2"></i>Fiyatlandırma
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="info-tab" data-bs-toggle="tab" 
+                    data-bs-target="#info" type="button" role="tab">
+                <i class="fas fa-info-circle me-2"></i>Genel Bilgiler
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="editTabContent">
+        <!-- Duration Tab -->
+        <div class="tab-pane fade show active" id="durations" role="tabpanel">
+            <form method="post" class="row">
+                {% csrf_token %}
+                <input type="hidden" name="update_durations" value="1">
+                
+                <div class="col-12">
+                    <h5><i class="fas fa-clock me-2"></i>Üretim Süreleri (Gün)</h5>
+                    <p class="text-muted">Her aşama için gereken süreleri gün olarak belirleyin</p>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Temel Süreler</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-seedling me-1"></i>Anaç Ekim Süresi
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control duration-input" 
+                                           name="rootstock_planting_duration" 
+                                           value="{{ season_product.rootstock_planting_duration }}" 
+                                           min="1" required>
+                                    <span class="input-group-text">gün</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-leaf me-1"></i>Kalem Ekim Süresi
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control duration-input" 
+                                           name="scion_planting_duration" 
+                                           value="{{ season_product.scion_planting_duration }}" 
+                                           min="1" required>
+                                    <span class="input-group-text">gün</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-cut me-1"></i>Kafa Oluşturma Süresi
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control duration-input" 
+                                           name="head_formation_duration" 
+                                           value="{{ season_product.head_formation_duration }}" 
+                                           min="1" required>
+                                    <span class="input-group-text">gün</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-0">
+                                <label class="form-label">
+                                    <i class="fas fa-home me-1"></i>Oda Bekleme Süresi
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control duration-input" 
+                                           name="waiting_on_room_duration" 
+                                           value="{{ season_product.waiting_on_room_duration }}" 
+                                           min="1" required>
+                                    <span class="input-group-text">gün</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Aşılama Süreleri</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-link me-1"></i>Tek Gövde Aşılama Süresi
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control duration-input" 
+                                           name="single_stem_grafting_duration" 
+                                           value="{{ season_product.single_stem_grafting_duration }}" 
+                                           min="1" required>
+                                    <span class="input-group-text">gün</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-link me-1"></i>Çift Gövde Aşılama Süresi
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control duration-input" 
+                                           name="double_stem_grafting_duration" 
+                                           value="{{ season_product.double_stem_grafting_duration }}" 
+                                           min="1" required>
+                                    <span class="input-group-text">gün</span>
+                                </div>
+                            </div>
+
+                            <!-- Toplam Süre Hesaplaması -->
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-calculator me-2"></i>Toplam Süreler</h6>
+                                <div id="total-calculations">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Tek Gövde Toplam:</span>
+                                        <strong id="single-total">-</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Çift Gövde Toplam:</span>
+                                        <strong id="double-total">-</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i>Süreleri Güncelle
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Prices Tab -->
+        <div class="tab-pane fade" id="prices" role="tabpanel">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="update_prices" value="1">
+                
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h5><i class="fas fa-money-bill me-2"></i>18 Aylık Fiyatlandırma</h5>
+                        <p class="text-muted">Her ay için tek ve çift gövde fiyatlarını belirleyin (TL)</p>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Tek Gövde Fiyatları -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-seedling me-2"></i>Tek Gövde Fiyatları
+                                </h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-sm price-table mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Ay</th>
+                                            <th>Fiyat (TL)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for price in single_prices %}
+                                        <tr>
+                                            <td><strong>{{ price.month }}. Ay</strong></td>
+                                            <td>
+                                                <input type="number" class="form-control price-input" 
+                                                       name="{{ price.field }}" 
+                                                       value="{{ price.value|floatformat:2 }}" 
+                                                       step="0.01" min="0"
+                                                       placeholder="0.00">
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Çift Gövde Fiyatları -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-tree me-2"></i>Çift Gövde Fiyatları
+                                </h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-sm price-table mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Ay</th>
+                                            <th>Fiyat (TL)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for price in double_prices %}
+                                        <tr>
+                                            <td><strong>{{ price.month }}. Ay</strong></td>
+                                            <td>
+                                                <input type="number" class="form-control price-input" 
+                                                       name="{{ price.field }}" 
+                                                       value="{{ price.value|floatformat:2 }}" 
+                                                       step="0.01" min="0"
+                                                       placeholder="0.00">
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price Tools -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-tools me-2"></i>Fiyat Araçları
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Tek Gövde - Tüm Aylara Uygula</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="bulk-single-price" 
+                                                   step="0.01" min="0" placeholder="0.00">
+                                            <button type="button" class="btn btn-outline-primary" 
+                                                    onclick="bulkFillSingle()">Uygula</button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Çift Gövde - Tüm Aylara Uygula</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="bulk-double-price" 
+                                                   step="0.01" min="0" placeholder="0.00">
+                                            <button type="button" class="btn btn-outline-info" 
+                                                    onclick="bulkFillDouble()">Uygula</button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Artan Fiyat (%) - Tek Gövde</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="increase-percentage" 
+                                                   step="0.1" min="0" placeholder="5.0">
+                                            <button type="button" class="btn btn-outline-success" 
+                                                    onclick="increasePrice()">Artır</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i>Fiyatları Güncelle
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Info Tab -->
+        <div class="tab-pane fade" id="info" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-info me-2"></i>Ürün Bilgileri</h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Sezon:</strong></td>
+                                    <td>{{ season.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Çeşit:</strong></td>
+                                    <td>{{ season_product.variety.get_full_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tür:</strong></td>
+                                    <td>{{ season_product.variety.species.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Anaç:</strong></td>
+                                    <td>
+                                        {% if season_product.rootstock %}
+                                            {{ season_product.rootstock.name }}
+                                        {% else %}
+                                            <span class="text-muted">Anaçsız</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Durum:</strong></td>
+                                    <td>
+                                        {% if season_product.is_active %}
+                                            <span class="badge bg-success">Aktif</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Pasif</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-clock me-2"></i>Zaman Bilgileri</h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Oluşturulma:</strong></td>
+                                    <td>{{ season_product.created_at|date:"d.m.Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Son Güncelleme:</strong></td>
+                                    <td>{{ season_product.updated_at|date:"d.m.Y H:i" }}</td>
+                                </tr>
+                            </table>
+                            
+                            {% if season_product.notes %}
+                            <div class="mt-3">
+                                <strong>Notlar:</strong>
+                                <p class="text-muted">{{ season_product.notes }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Toplam süre hesaplama
+function calculateTotals() {
+    const rootstock = parseInt(document.querySelector('[name="rootstock_planting_duration"]').value) || 0;
+    const scion = parseInt(document.querySelector('[name="scion_planting_duration"]').value) || 0;
+    const head = parseInt(document.querySelector('[name="head_formation_duration"]').value) || 0;
+    const waiting = parseInt(document.querySelector('[name="waiting_on_room_duration"]').value) || 0;
+    const singleGraft = parseInt(document.querySelector('[name="single_stem_grafting_duration"]').value) || 0;
+    const doubleGraft = parseInt(document.querySelector('[name="double_stem_grafting_duration"]').value) || 0;
+    
+    const singleTotal = rootstock + scion + head + waiting + singleGraft;
+    const doubleTotal = rootstock + scion + head + waiting + doubleGraft;
+    
+    document.getElementById('single-total').textContent = singleTotal + ' gün';
+    document.getElementById('double-total').textContent = doubleTotal + ' gün';
+}
+
+// Fiyat araçları
+function bulkFillSingle() {
+    const price = document.getElementById('bulk-single-price').value;
+    if (price) {
+        for (let i = 1; i <= 18; i++) {
+            const input = document.querySelector(`[name="price_single_stem_${i}"]`);
+            if (input) input.value = price;
+        }
+    }
+}
+
+function bulkFillDouble() {
+    const price = document.getElementById('bulk-double-price').value;
+    if (price) {
+        for (let i = 1; i <= 18; i++) {
+            const input = document.querySelector(`[name="price_double_stem_${i}"]`);
+            if (input) input.value = price;
+        }
+    }
+}
+
+function increasePrice() {
+    const percentage = parseFloat(document.getElementById('increase-percentage').value) || 0;
+    if (percentage > 0) {
+        for (let i = 1; i <= 18; i++) {
+            const input = document.querySelector(`[name="price_single_stem_${i}"]`);
+            if (input && input.value) {
+                const currentPrice = parseFloat(input.value);
+                const newPrice = currentPrice * (1 + percentage / 100);
+                input.value = newPrice.toFixed(2);
+            }
+        }
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Duration inputs için event listener
+    const durationInputs = document.querySelectorAll('.duration-input');
+    durationInputs.forEach(input => {
+        input.addEventListener('input', calculateTotals);
+    });
+    
+    // İlk hesaplama
+    calculateTotals();
+});
+</script>
+{% endblock %} 

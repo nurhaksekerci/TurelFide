@@ -1,0 +1,230 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Giriş - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center align-items-center min-vh-100">
+        <div class="col-lg-5 col-md-6 col-sm-8">
+            <div class="card fade-in">
+                <div class="card-header text-center py-4">
+                    <h2 class="mb-0">
+                        <i class="fas fa-seedling me-2"></i>
+                        TurelFide
+                    </h2>
+                    <p class="mb-0 mt-2 opacity-75">Yönetim Sistemi</p>
+                </div>
+                
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-lock fa-3x text-primary mb-3"></i>
+                        <h4 class="text-dark">PIN ile Giriş</h4>
+                        <p class="text-muted">4 haneli PIN kodunuzu giriniz</p>
+                    </div>
+                    
+                    <form method="post" id="loginForm">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <input 
+                                type="password" 
+                                class="form-control pin-input" 
+                                name="pin_code" 
+                                id="pin_code"
+                                maxlength="4" 
+                                pattern="[0-9]{4}"
+                                placeholder="****"
+                                autocomplete="off"
+                                required
+                                autofocus
+                            >
+                            <div class="form-text text-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    PIN kodunuzu unuttuysanız yöneticinize başvurun
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="loginBtn">
+                                <span class="btn-text">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    Giriş Yap
+                                </span>
+                                <span class="loading">
+                                    <i class="fas fa-spinner fa-spin me-2"></i>
+                                    Giriş yapılıyor...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- PIN Pad (Mobile Friendly) -->
+                    <div class="row mt-4 d-md-none" id="pinPad">
+                        <div class="col-12">
+                            <div class="text-center mb-2">
+                                <small class="text-muted">Dokunmatik Tuş Takımı</small>
+                            </div>
+                            <div class="row g-2">
+                                {% for num in "123456789" %}
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-outline-primary w-100 pin-btn" data-num="{{ num }}">
+                                        {{ num }}
+                                    </button>
+                                </div>
+                                {% endfor %}
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-outline-danger w-100" id="clearBtn">
+                                        <i class="fas fa-backspace"></i>
+                                    </button>
+                                </div>
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-outline-primary w-100 pin-btn" data-num="0">
+                                        0
+                                    </button>
+                                </div>
+                                <div class="col-4">
+                                    <button type="button" class="btn btn-outline-success w-100" id="submitPinBtn">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Info Cards -->
+            <div class="row mt-4">
+                <div class="col-md-6 mb-3">
+                    <div class="card text-center border-0 bg-transparent">
+                        <div class="card-body">
+                            <i class="fas fa-shield-alt fa-2x text-success mb-2"></i>
+                            <h6 class="card-title">Güvenli</h6>
+                            <small class="text-muted">PIN tabanlı güvenli giriş</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card text-center border-0 bg-transparent">
+                        <div class="card-body">
+                            <i class="fas fa-mobile-alt fa-2x text-primary mb-2"></i>
+                            <h6 class="card-title">Kolay</h6>
+                            <small class="text-muted">Hızlı ve pratik erişim</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    const pinInput = $('#pin_code');
+    const loginForm = $('#loginForm');
+    const loginBtn = $('#loginBtn');
+    
+    // PIN input formatting
+    pinInput.on('input', function() {
+        let value = $(this).val().replace(/\D/g, '');
+        if (value.length > 4) {
+            value = value.substring(0, 4);
+        }
+        $(this).val(value);
+        
+        // Auto submit when 4 digits entered
+        if (value.length === 4) {
+            setTimeout(() => {
+                loginForm.submit();
+            }, 300);
+        }
+    });
+    
+    // Virtual PIN pad for mobile
+    $('.pin-btn').on('click', function() {
+        const num = $(this).data('num');
+        const currentValue = pinInput.val();
+        if (currentValue.length < 4) {
+            pinInput.val(currentValue + num);
+            pinInput.trigger('input');
+        }
+    });
+    
+    // Clear button
+    $('#clearBtn').on('click', function() {
+        pinInput.val('');
+    });
+    
+    // Submit PIN button
+    $('#submitPinBtn').on('click', function() {
+        if (pinInput.val().length === 4) {
+            loginForm.submit();
+        }
+    });
+    
+    // Form submission
+    loginForm.on('submit', function(e) {
+        e.preventDefault();
+        
+        const pinCode = pinInput.val().trim();
+        
+        if (pinCode.length !== 4) {
+            showNotification('PIN kodu 4 haneli olmalıdır', 'error');
+            return;
+        }
+        
+        if (!/^\d{4}$/.test(pinCode)) {
+            showNotification('PIN kodu sadece rakamlardan oluşmalıdır', 'error');
+            return;
+        }
+        
+        setButtonLoading(loginBtn, true);
+        
+        // AJAX login
+        $.ajax({
+            url: '{% url "accounts:ajax_login" %}',
+            method: 'POST',
+            data: JSON.stringify({
+                pin_code: pinCode
+            }),
+            contentType: 'application/json',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    setTimeout(() => {
+                        window.location.href = response.redirect_url;
+                    }, 1000);
+                } else {
+                    showNotification(response.message, 'error');
+                    setButtonLoading(loginBtn, false);
+                    pinInput.val('').focus();
+                }
+            },
+            error: function() {
+                showNotification('Bir hata oluştu, lütfen tekrar deneyin', 'error');
+                setButtonLoading(loginBtn, false);
+                pinInput.val('').focus();
+            }
+        });
+    });
+    
+    // Keyboard shortcuts
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Enter' && pinInput.val().length === 4) {
+            loginForm.submit();
+        } else if (e.key === 'Escape') {
+            pinInput.val('');
+        }
+    });
+    
+    // Focus on load
+    pinInput.focus();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,273 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ season.name }} - Ürünler - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-seedling me-2"></i>{{ season.name }} - Ürünler</h2>
+            <p class="text-muted">Sezona ait çeşit ve anaç kombinasyonları</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{% url 'seasons:season_product_create' season.id %}" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>Ürün Ekle
+                </a>
+                <a href="{% url 'seasons:season_product_bulk_create' season.id %}" class="btn btn-outline-success">
+                    <i class="fas fa-plus-circle me-2"></i>Toplu Ekle
+                </a>
+            </div>
+            <div class="mt-2">
+                <a href="{% url 'seasons:season_detail' season.id %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i>Sezon Detayı
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="variety" class="form-label">Çeşit</label>
+                    <select class="form-select" id="variety" name="variety">
+                        <option value="">Tüm Çeşitler</option>
+                        {% for variety in varieties %}
+                        <option value="{{ variety.id }}" 
+                                {% if variety_filter == variety.id|stringformat:"s" %}selected{% endif %}>
+                            {{ variety.get_full_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="rootstock" class="form-label">Anaç</label>
+                    <select class="form-select" id="rootstock" name="rootstock">
+                        <option value="">Tüm Anaçlar</option>
+                        {% for rootstock in rootstocks %}
+                        <option value="{{ rootstock.id }}" 
+                                {% if rootstock_filter == rootstock.id|stringformat:"s" %}selected{% endif %}>
+                            {{ rootstock.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-2"></i>Filtrele
+                    </button>
+                    <a href="{% url 'seasons:season_product_list' season.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-2"></i>Temizle
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Sezon Ürünleri
+                    <span class="badge bg-primary">{{ season_products.paginator.count }}</span>
+                </h5>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                            data-bs-toggle="dropdown">
+                        <i class="fas fa-cog me-1"></i>Ayarlar
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{% url 'seasons:season_export' season.id %}">
+                            <i class="fas fa-download me-2"></i>Dışa Aktar
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if season_products %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Çeşit</th>
+                            <th>Anaç</th>
+                            <th>Durum</th>
+                            <th>Tek Gövde Süre</th>
+                            <th>Çift Gövde Süre</th>
+                            <th>Fiyat Durumu</th>
+                            <th>Güncellenme</th>
+                            <th width="180">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in season_products %}
+                        <tr>
+                            <td>
+                                <strong>{{ product.variety.get_full_name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ product.variety.species.name }}</small>
+                            </td>
+                            <td>
+                                {% if product.rootstock %}
+                                    <span class="badge bg-info">{{ product.rootstock.name }}</span>
+                                {% else %}
+                                    <span class="text-muted">Anaçsız</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if product.is_active %}
+                                    <span class="badge bg-success">Aktif</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Pasif</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% with single_days=product.rootstock_planting_duration|add:product.scion_planting_duration|add:product.single_stem_grafting_duration|add:product.head_formation_duration|add:product.waiting_on_room_duration %}
+                                <span class="badge bg-primary">{{ single_days }} gün</span>
+                                {% endwith %}
+                            </td>
+                            <td>
+                                {% with double_days=product.rootstock_planting_duration|add:product.scion_planting_duration|add:product.double_stem_grafting_duration|add:product.head_formation_duration|add:product.waiting_on_room_duration %}
+                                <span class="badge bg-info">{{ double_days }} gün</span>
+                                {% endwith %}
+                            </td>
+                            <td>
+                                {% with single_prices=product.price_single_stem_1|add:product.price_single_stem_2|add:product.price_single_stem_3 %}
+                                {% with double_prices=product.price_double_stem_1|add:product.price_double_stem_2|add:product.price_double_stem_3 %}
+                                {% if single_prices > 0 and double_prices > 0 %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>Tam
+                                    </span>
+                                {% elif single_prices > 0 or double_prices > 0 %}
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-exclamation me-1"></i>Kısmi
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-times me-1"></i>Yok
+                                    </span>
+                                {% endif %}
+                                {% endwith %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ product.updated_at|date:"d.m.Y H:i" }}</small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'seasons:season_product_edit' season.id product.id %}" 
+                                       class="btn btn-outline-primary" title="Düzenle">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-warning" 
+                                            onclick="toggleProductStatus({{ product.id }})" 
+                                            title="{% if product.is_active %}Pasifleştir{% else %}Aktifleştir{% endif %}">
+                                        {% if product.is_active %}
+                                            <i class="fas fa-pause"></i>
+                                        {% else %}
+                                            <i class="fas fa-play"></i>
+                                        {% endif %}
+                                    </button>
+                                    <form method="post" action="{% url 'seasons:season_product_delete' season.id product.id %}" 
+                                          class="d-inline" onsubmit="return confirm('Bu ürünü silmek istediğinizden emin misiniz?')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger" title="Sil">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-seedling fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">Hiç ürün bulunamadı</h5>
+                <p class="text-muted">
+                    {% if variety_filter or rootstock_filter %}
+                        Arama kriterlerinizi değiştirin veya filtreleri temizleyin.
+                    {% else %}
+                        Bu sezon için henüz hiç ürün eklenmemiş.
+                    {% endif %}
+                </p>
+                <a href="{% url 'seasons:season_product_create' season.id %}" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>İlk Ürünü Ekleyin
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if season_products.has_other_pages %}
+        <div class="card-footer">
+            <nav aria-label="Sayfa navigasyonu">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if season_products.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if variety_filter %}variety={{ variety_filter }}&{% endif %}{% if rootstock_filter %}rootstock={{ rootstock_filter }}&{% endif %}page={{ season_products.previous_page_number }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in season_products.paginator.page_range %}
+                        {% if season_products.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > season_products.number|add:-3 and num < season_products.number|add:3 %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if variety_filter %}variety={{ variety_filter }}&{% endif %}{% if rootstock_filter %}rootstock={{ rootstock_filter }}&{% endif %}page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if season_products.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if variety_filter %}variety={{ variety_filter }}&{% endif %}{% if rootstock_filter %}rootstock={{ rootstock_filter }}&{% endif %}page={{ season_products.next_page_number }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function toggleProductStatus(productId) {
+    if (confirm('Ürün durumunu değiştirmek istediğinizden emin misiniz?')) {
+        // AJAX ile durum değiştirme
+        fetch(`/api/seasons/products/${productId}/toggle-status/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Hata: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Bir hata oluştu');
+        });
+    }
+}
+</script>
+{% endblock %} 

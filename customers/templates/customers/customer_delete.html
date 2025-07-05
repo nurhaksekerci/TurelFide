@@ -1,0 +1,293 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ customer.get_full_name }} - Müşteri Sil - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'customers:list' %}">Müşteriler</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'customers:detail' customer.id %}">{{ customer.get_full_name }}</a></li>
+                    <li class="breadcrumb-item active">Sil</li>
+                </ol>
+            </nav>
+            <h2><i class="fas fa-user-times me-2 text-danger"></i>Müşteri Sil</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'customers:detail' customer.id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Geri Dön
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Müşteri Silme Onayı
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Customer Info -->
+                    <div class="text-center mb-4">
+                        <div class="avatar-circle mx-auto mb-3" style="background-color: {{ customer.color }};">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h4>{{ customer.get_full_name }}</h4>
+                        <p class="text-muted">
+                            <i class="fas fa-phone me-1"></i>{{ customer.formatted_phone }}<br>
+                            <i class="fas fa-map-marker-alt me-1"></i>{{ customer.get_short_address }}
+                        </p>
+                        <span class="badge" style="background-color: {{ customer.color }}; color: white;">
+                            {{ customer.color_category }} Sınıfı - {{ customer.color_display_name }}
+                        </span>
+                    </div>
+
+                    <!-- Warning Message -->
+                    <div class="alert alert-danger" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Dikkat!
+                        </h6>
+                        <p class="mb-2">Bu işlem müşteriyi <strong>pasifleştirecektir</strong>. Müşteri:</p>
+                        <ul class="mb-2">
+                            <li>Sistemde görünmeye devam edecek ancak "Pasif" durumda olacak</li>
+                            <li>Listelemelerde varsayılan olarak gözükmeyecek</li>
+                            <li>Gerektiğinde tekrar aktifleştirilebilir</li>
+                            <li>Verdiğiniz siparişler ve geçmiş kayıtlar korunacak</li>
+                        </ul>
+                        <hr>
+                        <p class="mb-0">
+                            <small><strong>Not:</strong> Bu işlem geri alınabilir. Müşteri tamamen silinmez, sadece pasifleştirilir.</small>
+                        </p>
+                    </div>
+
+                    <!-- Customer Details -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-muted mb-3">Müşteri Bilgileri</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td width="120"><strong>Ad Soyad:</strong></td>
+                                        <td>{{ customer.get_full_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Telefon:</strong></td>
+                                        <td>{{ customer.formatted_phone }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Adres:</strong></td>
+                                        <td>{{ customer.get_full_address }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Sınıf:</strong></td>
+                                        <td>{{ customer.color_display_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Durum:</strong></td>
+                                        <td>
+                                            {% if customer.is_active %}
+                                            <span class="badge bg-success">Aktif</span>
+                                            {% else %}
+                                            <span class="badge bg-danger">Pasif</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Kayıt Tarihi:</strong></td>
+                                        <td>{{ customer.created_at|date:"d.m.Y H:i" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Oluşturan:</strong></td>
+                                        <td>{{ customer.created_by.get_full_name }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Confirmation Form -->
+                    <form method="post" id="deleteForm">
+                        {% csrf_token %}
+                        
+                        <!-- Confirmation Checkbox -->
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="confirmDelete" required>
+                            <label class="form-check-label" for="confirmDelete">
+                                <strong>{{ customer.get_full_name }}</strong> adlı müşteriyi pasifleştirmek istediğimi onaylıyorum
+                            </label>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'customers:detail' customer.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>İptal
+                            </a>
+                            <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
+                                <i class="fas fa-user-times me-2"></i>Müşteriyi Pasifleştir
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Additional Info -->
+            <div class="card mt-3 border-info">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-info-circle me-2"></i>Alternatif İşlemler
+                    </h6>
+                    <p class="card-text">
+                        Müşteriyi silmek yerine aşağıdaki işlemleri yapabilirsiniz:
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'customers:edit' customer.id %}" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-edit me-2"></i>Müşteri Bilgilerini Düzenle
+                        </a>
+                        {% if customer.is_active %}
+                        <button type="button" class="btn btn-outline-secondary btn-sm toggle-status-btn" 
+                                data-customer-id="{{ customer.id }}"
+                                data-current-status="true">
+                            <i class="fas fa-pause me-2"></i>Geçici Olarak Pasifleştir
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+}
+
+.table td {
+    vertical-align: middle;
+    padding: 0.5rem;
+}
+
+.form-check-input:checked {
+    background-color: var(--bs-danger);
+    border-color: var(--bs-danger);
+}
+
+.btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.card.border-danger {
+    border-width: 2px;
+}
+
+.card.border-info {
+    border-width: 1px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Enable/disable delete button based on confirmation checkbox
+    $('#confirmDelete').on('change', function() {
+        const isChecked = $(this).is(':checked');
+        $('#deleteBtn').prop('disabled', !isChecked);
+        
+        if (isChecked) {
+            $('#deleteBtn').removeClass('btn-outline-danger').addClass('btn-danger');
+        } else {
+            $('#deleteBtn').removeClass('btn-danger').addClass('btn-outline-danger');
+        }
+    });
+    
+    // Handle form submission
+    $('#deleteForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        // Final confirmation
+        const customerName = '{{ customer.get_full_name|escapejs }}';
+        const confirmMessage = `${customerName} adlı müşteriyi pasifleştirmek istediğinizden emin misiniz?\n\nBu işlem geri alınabilir.`;
+        
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+        
+        // Show loading state
+        const deleteBtn = $('#deleteBtn');
+        setButtonLoading(deleteBtn, true);
+        
+        // Submit form
+        this.submit();
+    });
+    
+    // Quick toggle status button
+    $('.toggle-status-btn').on('click', function() {
+        const btn = $(this);
+        const customerId = btn.data('customer-id');
+        
+        if (!confirm('Bu müşteriyi geçici olarak pasifleştirmek istediğinizden emin misiniz?\n\nBu işlem geri alınabilir ve müşteri detay sayfasından tekrar aktifleştirilebilir.')) {
+            return;
+        }
+        
+        setButtonLoading(btn, true);
+        
+        $.ajax({
+            url: `{% url 'customers:ajax_toggle_status' 0 %}`.replace('0', customerId),
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    // Redirect to customer list after successful toggle
+                    setTimeout(() => {
+                        window.location.href = '{% url "customers:list" %}';
+                    }, 1500);
+                } else {
+                    showNotification(response.message, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Bir hata oluştu', 'error');
+            },
+            complete: function() {
+                setButtonLoading(btn, false);
+            }
+        });
+    });
+});
+
+// Helper function for button loading state
+function setButtonLoading(button, loading) {
+    if (loading) {
+        button.prop('disabled', true);
+        const originalText = button.html();
+        button.data('original-text', originalText);
+        button.html('<i class="fas fa-spinner fa-spin me-2"></i>İşleniyor...');
+    } else {
+        button.prop('disabled', false);
+        const originalText = button.data('original-text');
+        if (originalText) {
+            button.html(originalText);
+        }
+    }
+}
+</script>
+{% endblock %} 

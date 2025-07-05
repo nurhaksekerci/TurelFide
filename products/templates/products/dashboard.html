@@ -1,0 +1,265 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Ürün Yönetimi - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-seedling me-2"></i>Ürün Yönetimi</h2>
+            <p class="text-muted">Türler, Çeşitler, Anaçlar ve Tohum Markaları</p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if can_edit %}
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="fas fa-plus me-2"></i>Yeni Ekle
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'products:species_create' %}">
+                        <i class="fas fa-leaf me-2"></i>Yeni Tür
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'products:seed_brand_create' %}">
+                        <i class="fas fa-tag me-2"></i>Tohum Markası
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'products:variety_create' %}">
+                        <i class="fas fa-spa me-2"></i>Yeni Çeşit
+                    </a></li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ stats.summary.total_species }}</h4>
+                            <span>Aktif Tür</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-leaf fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'products:species_list' %}" class="text-white text-decoration-none">
+                        <small>Detayları görüntüle <i class="fas fa-arrow-right ms-1"></i></small>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ stats.summary.total_varieties }}</h4>
+                            <span>Aktif Çeşit</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-spa fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'products:variety_list' %}" class="text-white text-decoration-none">
+                        <small>Detayları görüntüle <i class="fas fa-arrow-right ms-1"></i></small>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ stats.summary.total_rootstocks }}</h4>
+                            <span>Aktif Anaç</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-tree fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'products:rootstock_list' %}" class="text-white text-decoration-none">
+                        <small>Detayları görüntüle <i class="fas fa-arrow-right ms-1"></i></small>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ stats.summary.total_brands }}</h4>
+                            <span>Tohum Markası</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-tag fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'products:seed_brand_list' %}" class="text-dark text-decoration-none">
+                        <small>Detayları görüntüle <i class="fas fa-arrow-right ms-1"></i></small>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Charts -->
+    <div class="row">
+        <!-- Species Statistics -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5><i class="fas fa-leaf me-2"></i>Tür İstatistikleri</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-4 text-center">
+                            <h3 class="text-primary">{{ stats.species.total }}</h3>
+                            <small class="text-muted">Toplam</small>
+                        </div>
+                        <div class="col-4 text-center">
+                            <h3 class="text-success">{{ stats.species.active }}</h3>
+                            <small class="text-muted">Aktif</small>
+                        </div>
+                        <div class="col-4 text-center">
+                            <h3 class="text-warning">{{ stats.species.inactive }}</h3>
+                            <small class="text-muted">Pasif</small>
+                        </div>
+                    </div>
+                    
+                    {% if stats.species.species_details %}
+                    <h6 class="mt-3">Tür Detayları:</h6>
+                    <div class="species-details" style="max-height: 200px; overflow-y: auto;">
+                        {% for detail in stats.species.species_details %}
+                        <div class="d-flex justify-content-between align-items-center py-1">
+                            <span class="fw-bold">{{ detail.name }}</span>
+                            <div class="small text-muted">
+                                <span class="badge bg-success me-1">{{ detail.varieties_count }} çeşit</span>
+                                <span class="badge bg-info">{{ detail.rootstocks_count }} anaç</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Variety Statistics -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5><i class="fas fa-spa me-2"></i>Çeşit İstatistikleri</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-4 text-center">
+                            <h3 class="text-primary">{{ stats.varieties.total }}</h3>
+                            <small class="text-muted">Toplam</small>
+                        </div>
+                        <div class="col-4 text-center">
+                            <h3 class="text-success">{{ stats.varieties.active }}</h3>
+                            <small class="text-muted">Aktif</small>
+                        </div>
+                        <div class="col-4 text-center">
+                            <h3 class="text-warning">{{ stats.varieties.inactive }}</h3>
+                            <small class="text-muted">Pasif</small>
+                        </div>
+                    </div>
+                    
+                    {% if stats.varieties.species_breakdown %}
+                    <h6 class="mt-3">Tür Bazında Dağılım:</h6>
+                    <div class="variety-breakdown" style="max-height: 200px; overflow-y: auto;">
+                        {% for breakdown in stats.varieties.species_breakdown %}
+                        <div class="d-flex justify-content-between align-items-center py-1">
+                            <span>{{ breakdown.species__name }}</span>
+                            <span class="badge bg-primary">{{ breakdown.count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-bolt me-2"></i>Hızlı İşlemler</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <a href="{% url 'products:species_list' %}" class="btn btn-outline-primary w-100 mb-2">
+                                <i class="fas fa-leaf me-2"></i>Tür Yönetimi
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'products:variety_list' %}" class="btn btn-outline-success w-100 mb-2">
+                                <i class="fas fa-spa me-2"></i>Çeşit Yönetimi
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'products:rootstock_list' %}" class="btn btn-outline-info w-100 mb-2">
+                                <i class="fas fa-tree me-2"></i>Anaç Yönetimi
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'products:seed_brand_list' %}" class="btn btn-outline-warning w-100 mb-2">
+                                <i class="fas fa-tag me-2"></i>Marka Yönetimi
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card-footer {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-top: none;
+}
+
+.species-details, .variety-breakdown {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    background-color: #f8f9fa;
+}
+
+.opacity-75 {
+    opacity: 0.75;
+}
+</style>
+{% endblock %} 

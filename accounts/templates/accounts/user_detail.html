@@ -1,0 +1,415 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ target_user.get_full_name|default:target_user.username }} - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-user me-2"></i>Kullanıcı Detayları</h2>
+                    <p class="text-muted">{{ target_user.get_full_name|default:target_user.username }} kullanıcısının bilgileri</p>
+                </div>
+                <div>
+                    <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left me-2"></i>Kullanıcı Listesi
+                    </a>
+                    {% if can_edit %}
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-cog me-2"></i>İşlemler
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <button class="dropdown-item toggle-status-btn" 
+                                        data-user-id="{{ target_user.id }}"
+                                        data-current-status="{{ target_user.is_active|yesno:'true,false' }}"
+                                        {% if target_user == user %}disabled{% endif %}>
+                                    <i class="fas fa-{% if target_user.is_active %}pause{% else %}play{% endif %} me-2"></i>
+                                    {% if target_user.is_active %}Deaktive Et{% else %}Aktive Et{% endif %}
+                                </button>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" 
+                                   href="{% url 'accounts:reset_pin' target_user.id %}"
+                                   onclick="return confirm('{{ target_user.get_full_name }} kullanıcısının PIN kodunu sıfırlamak istediğinizden emin misiniz?')">
+                                    <i class="fas fa-key me-2"></i>PIN Sıfırla
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- User Profile Card -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <div class="avatar-circle-large mx-auto mb-3">
+                                <i class="fas fa-user fa-3x"></i>
+                            </div>
+                            <h4 class="card-title">{{ target_user.get_full_name|default:target_user.username }}</h4>
+                            <p class="card-text">
+                                <span class="badge role-badge {% if target_user.role == 'admin' %}bg-admin{% elif target_user.role == 'readonly' %}bg-readonly{% elif 'manager' in target_user.role %}bg-manager{% elif 'personel' in target_user.role %}bg-personel{% else %}bg-other{% endif %}">
+                                    {{ target_user.get_role_display }}
+                                </span>
+                            </p>
+                            <p class="text-muted">@{{ target_user.username }}</p>
+                            
+                            <!-- Status Badge -->
+                            <div class="mb-3">
+                                {% if target_user.is_active %}
+                                <span class="badge bg-success fs-6">
+                                    <i class="fas fa-check-circle me-1"></i>Aktif
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger fs-6">
+                                    <i class="fas fa-times-circle me-1"></i>Pasif
+                                </span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Contact Info -->
+                            <div class="text-start">
+                                <div class="mb-2">
+                                    <i class="fas fa-phone text-primary me-2"></i>
+                                    <strong>+90 {{ target_user.phone_number }}</strong>
+                                </div>
+                                {% if target_user.email %}
+                                <div class="mb-2">
+                                    <i class="fas fa-envelope text-primary me-2"></i>
+                                    <span>{{ target_user.email }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>Hesap İstatistikleri
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="border-end">
+                                        <h5 class="text-primary mb-0">
+                                            {{ target_user.date_joined|timesince }}
+                                        </h5>
+                                        <small class="text-muted">Üyelik Süresi</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <h5 class="text-success mb-0">
+                                        {% if target_user.last_login %}
+                                        {{ target_user.last_login|timesince }}
+                                        {% else %}
+                                        Hiç
+                                        {% endif %}
+                                    </h5>
+                                    <small class="text-muted">Son Giriş</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Details -->
+                <div class="col-lg-8">
+                    <!-- Basic Information -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-info-circle me-2"></i>Temel Bilgiler
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Ad</label>
+                                        <p class="fw-bold">{{ target_user.first_name|default:"—" }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Kullanıcı Adı</label>
+                                        <p class="fw-bold">{{ target_user.username }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Telefon</label>
+                                        <p class="fw-bold">+90 {{ target_user.phone_number }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Soyad</label>
+                                        <p class="fw-bold">{{ target_user.last_name|default:"—" }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">E-posta</label>
+                                        <p class="fw-bold">{{ target_user.email|default:"—" }}</p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Rol</label>
+                                        <p class="fw-bold">
+                                            <span class="badge role-badge {% if target_user.role == 'admin' %}bg-admin{% elif target_user.role == 'readonly' %}bg-readonly{% elif 'manager' in target_user.role %}bg-manager{% elif 'personel' in target_user.role %}bg-personel{% else %}bg-other{% endif %}">
+                                                {{ target_user.get_role_display }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Information -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-user-cog me-2"></i>Hesap Bilgileri
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Kayıt Tarihi</label>
+                                        <p class="fw-bold">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            {{ target_user.date_joined|date:"d.m.Y H:i" }}
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Hesap Durumu</label>
+                                        <p>
+                                            {% if target_user.is_active %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Aktif
+                                            </span>
+                                            {% else %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times-circle me-1"></i>Pasif
+                                            </span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Son Giriş</label>
+                                        <p class="fw-bold">
+                                            {% if target_user.last_login %}
+                                            <i class="fas fa-clock me-1"></i>
+                                            {{ target_user.last_login|date:"d.m.Y H:i" }}
+                                            {% else %}
+                                            <span class="text-muted">Hiç giriş yapmadı</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">PIN Kodu</label>
+                                        <p class="fw-bold">
+                                            <i class="fas fa-key me-1"></i>
+                                            <span id="pinDisplay">****</span>
+                                            {% if user.is_superuser or user.is_staff %}
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-secondary ms-2" 
+                                                    id="togglePinBtn"
+                                                    data-user-id="{{ target_user.id }}"
+                                                    title="PIN Kodunu Göster/Gizle">
+                                                <i class="fas fa-eye" id="pinIcon"></i>
+                                            </button>
+                                            {% endif %}
+                                            {% if can_edit %}
+                                            <br><small class="text-muted">(Sıfırlanabilir)</small>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Role Permissions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-shield-alt me-2"></i>Rol Yetkileri
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% if target_user.role == 'admin' %}
+                                <div class="col-12">
+                                    <div class="alert alert-danger">
+                                        <h6><i class="fas fa-crown me-2"></i>Sistem Yöneticisi</h6>
+                                        <p class="mb-0">Tüm sistem fonksiyonlarına tam erişim yetkisi vardır.</p>
+                                    </div>
+                                </div>
+                                {% elif target_user.role == 'readonly' %}
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <h6><i class="fas fa-eye me-2"></i>Sadece Görüntüleme</h6>
+                                        <p class="mb-0">Tüm verilere erişim var ancak değişiklik yapma yetkisi yoktur.</p>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="col-12">
+                                    <div class="alert alert-warning">
+                                        <h6><i class="fas fa-user-tag me-2"></i>{{ target_user.get_role_display }}</h6>
+                                        <p class="mb-0">
+                                            {% if 'manager' in target_user.role %}
+                                            Departman yönetim yetkilerine sahiptir.
+                                            {% elif 'personel' in target_user.role %}
+                                            Sınırlı operasyonel yetkilerine sahiptir.
+                                            {% else %}
+                                            Özel rol yetkilerine sahiptir.
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-circle-large {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.border-end {
+    border-right: 1px solid #dee2e6 !important;
+}
+
+.form-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let pinVisible = false;
+    let actualPin = null;
+    
+    // PIN görüntüleme toggle
+    $('#togglePinBtn').on('click', function() {
+        const btn = $(this);
+        const userId = btn.data('user-id');
+        const pinDisplay = $('#pinDisplay');
+        const pinIcon = $('#pinIcon');
+        
+        if (!pinVisible) {
+            // PIN'i göster
+            if (actualPin === null) {
+                // İlk kez gösteriliyor, AJAX ile PIN'i al
+                setButtonLoading(btn, true);
+                
+                $.ajax({
+                    url: `{% url 'accounts:ajax_get_pin' 0 %}`.replace('0', userId),
+                    method: 'GET',
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            actualPin = response.pin_code;
+                            pinDisplay.text(actualPin);
+                            pinIcon.removeClass('fa-eye').addClass('fa-eye-slash');
+                            btn.attr('title', 'PIN Kodunu Gizle');
+                            pinVisible = true;
+                            
+                            showNotification('PIN kodu görüntülendi', 'info');
+                        } else {
+                            showNotification(response.message, 'error');
+                        }
+                    },
+                    error: function() {
+                        showNotification('PIN kodu alınırken hata oluştu', 'error');
+                    },
+                    complete: function() {
+                        setButtonLoading(btn, false);
+                    }
+                });
+            } else {
+                // Zaten alınmış, sadece göster
+                pinDisplay.text(actualPin);
+                pinIcon.removeClass('fa-eye').addClass('fa-eye-slash');
+                btn.attr('title', 'PIN Kodunu Gizle');
+                pinVisible = true;
+            }
+        } else {
+            // PIN'i gizle
+            pinDisplay.text('****');
+            pinIcon.removeClass('fa-eye-slash').addClass('fa-eye');
+            btn.attr('title', 'PIN Kodunu Göster');
+            pinVisible = false;
+        }
+    });
+    
+    // Toggle user status
+    $('.toggle-status-btn').on('click', function() {
+        const btn = $(this);
+        const userId = btn.data('user-id');
+        const currentStatus = btn.data('current-status') === 'true';
+        const action = currentStatus ? 'deaktive' : 'aktive';
+        
+        if (!confirm(`Bu kullanıcıyı ${action} etmek istediğinizden emin misiniz?`)) {
+            return;
+        }
+        
+        setButtonLoading(btn, true);
+        
+        $.ajax({
+            url: `{% url 'accounts:ajax_toggle_user_status' 0 %}`.replace('0', userId),
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    
+                    // Reload page to update all status indicators
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    showNotification(response.message, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Bir hata oluştu', 'error');
+            },
+            complete: function() {
+                setButtonLoading(btn, false);
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

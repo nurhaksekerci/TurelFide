@@ -1,0 +1,198 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Ekim Takip - Sezon Seçimi{% endblock %}
+
+{% block extra_css %}
+<style>
+    .season-card {
+        transition: transform 0.2s ease-in-out;
+        border: 1px solid #dee2e6;
+    }
+    
+    .season-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border-color: #28a745;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 0.5rem;
+        background: rgba(0,0,0,0.05);
+        border-radius: 0.25rem;
+        font-size: 0.85rem;
+    }
+    
+    .stat-value {
+        font-weight: bold;
+        display: block;
+        font-size: 1.1em;
+    }
+    
+    .active-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>
+                <i class="fas fa-seedling me-2 text-success"></i>Ekim Takip Sistemi
+            </h2>
+            <p class="text-muted">Lütfen takip etmek istediğiniz sezonu seçiniz</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'orders:season_selection' %}" class="btn btn-outline-primary">
+                <i class="fas fa-shopping-cart me-2"></i>Sipariş Yönetimi
+            </a>
+            <a href="/" class="btn btn-outline-secondary ms-2">
+                <i class="fas fa-home me-2"></i>Ana Sayfa
+            </a>
+        </div>
+    </div>
+
+    <!-- Seasons Grid -->
+    <div class="row">
+        {% for season in seasons %}
+        <div class="col-md-4 mb-4">
+            <div class="card season-card h-100 position-relative">
+                {% if season.is_active %}
+                    <span class="badge bg-success active-badge">AKTİF SEZON</span>
+                {% endif %}
+                
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-calendar-alt me-2 text-primary"></i>{{ season.name }}
+                    </h5>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-play me-1"></i>{{ season.start_date|date:"d F Y" }}
+                            {% if season.end_date %}
+                                <br><i class="fas fa-stop me-1"></i>{{ season.end_date|date:"d F Y" }}
+                            {% endif %}
+                        </small>
+                    </div>
+
+                    <!-- Ekim İstatistikleri -->
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-value text-primary">{{ season.planting_stats.total_requests }}</span>
+                            <small>Toplam Talep</small>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value text-warning">{{ season.planting_stats.pending_requests }}</span>
+                            <small>Bekliyor</small>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value text-info">{{ season.planting_stats.sent_requests }}</span>
+                            <small>Gönderildi</small>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value text-success">{{ season.planting_stats.confirmed_requests }}</span>
+                            <small>Onaylandı</small>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value text-success">{{ season.planting_stats.planted_requests }}</span>
+                            <small>Ekildi</small>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value text-danger">{{ season.planting_stats.overdue_requests }}</span>
+                            <small>Geciken</small>
+                        </div>
+                    </div>
+
+                    {% if season.description %}
+                    <div class="mt-3">
+                        <small class="text-muted">{{ season.description|truncatewords:15 }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card-footer bg-transparent">
+                    <div class="d-grid">
+                        <a href="{% url 'orders:planting_list' season.id %}" 
+                           class="btn btn-success">
+                            <i class="fas fa-seedling me-2"></i>Ekim Takibine Git
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">Henüz sezon bulunamadı</h5>
+                <p class="text-muted">Sistem yöneticisi tarafından sezon oluşturulması gerekiyor.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Info Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-info-circle me-2 text-info"></i>Ekim Takip Sistemi Hakkında
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6 class="text-success">🌱 Ekim Talepleri</h6>
+                            <p class="small text-muted">
+                                Sipariş kalemlerinden oluşturulan ekim talep kartlarını görüntüleyin ve yönetin.
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-warning">📊 Durum Takibi</h6>
+                            <p class="small text-muted">
+                                Bekleyen, gönderilen, onaylanan ve ekilen talepleri anlık olarak izleyin.
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-info">📍 Lokasyon Yönetimi</h6>
+                            <p class="small text-muted">
+                                Ekim alanları ve lokasyon bilgilerini takip edin, filtreleyin.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Season card hover effects
+document.addEventListener('DOMContentLoaded', function() {
+    const seasonCards = document.querySelectorAll('.season-card');
+    
+    seasonCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON') {
+                const link = card.querySelector('a[href]');
+                if (link) {
+                    window.location.href = link.href;
+                }
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %} 

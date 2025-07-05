@@ -1,0 +1,444 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ customer.get_full_name }} - Müşteri Detayı - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'customers:list' %}">Müşteriler</a></li>
+                    <li class="breadcrumb-item active">{{ customer.get_full_name }}</li>
+                </ol>
+            </nav>
+            <h2>
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle me-3" style="background-color: {{ customer.color }};">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    {{ customer.get_full_name }}
+                    {% if customer.is_active %}
+                    <span class="badge bg-success ms-3">Aktif</span>
+                    {% else %}
+                    <span class="badge bg-danger ms-3">Pasif</span>
+                    {% endif %}
+                </div>
+            </h2>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if can_edit %}
+            <div class="btn-group">
+                <a href="{% url 'customers:edit' customer.id %}" class="btn btn-warning">
+                    <i class="fas fa-edit me-2"></i>Düzenle
+                </a>
+                <button type="button" 
+                        class="btn btn-info toggle-status-btn" 
+                        data-customer-id="{{ customer.id }}"
+                        data-current-status="{{ customer.is_active|yesno:'true,false' }}">
+                    <i class="fas fa-{% if customer.is_active %}pause{% else %}play{% endif %} me-2"></i>
+                    {% if customer.is_active %}Pasifleştir{% else %}Aktifleştir{% endif %}
+                </button>
+                {% if can_delete %}
+                <a href="{% url 'customers:delete' customer.id %}" class="btn btn-danger">
+                    <i class="fas fa-trash me-2"></i>Sil
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Customer Info -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user me-2"></i>Müşteri Bilgileri
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">Kişisel Bilgiler</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td width="120"><strong>Ad Soyad:</strong></td>
+                                    <td>{{ customer.get_full_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Telefon:</strong></td>
+                                    <td>
+                                        <a href="tel:{{ customer.phone_number }}" class="text-decoration-none">
+                                            <i class="fas fa-phone me-1"></i>{{ customer.formatted_phone }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Sınıf:</strong></td>
+                                    <td>
+                                        <span class="badge" style="background-color: {{ customer.color }}; color: white;">
+                                            {{ customer.color_category }} Sınıfı - {{ customer.color_display_name }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">Adres Bilgileri</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td width="120"><strong>Şehir:</strong></td>
+                                    <td>{{ customer.city }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>İlçe:</strong></td>
+                                    <td>{{ customer.district }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Mahalle:</strong></td>
+                                    <td>{{ customer.neighborhood }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Adres:</strong></td>
+                                    <td>
+                                        <div class="address-box">
+                                            {{ customer.address }}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Actions History (placeholder) -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>Son Aktiviteler
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Müşteri Oluşturuldu</h6>
+                                <p class="text-muted mb-1">
+                                    {{ customer.created_by.get_full_name }} tarafından oluşturuldu
+                                </p>
+                                <small class="text-muted">{{ customer.created_at|date:"d.m.Y H:i" }}</small>
+                            </div>
+                        </div>
+                        
+                        {% if customer.updated_at != customer.created_at %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Bilgiler Güncellendi</h6>
+                                <p class="text-muted mb-1">
+                                    Müşteri bilgileri güncellendi
+                                </p>
+                                <small class="text-muted">{{ customer.updated_at|date:"d.m.Y H:i" }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Stats & Quick Actions -->
+        <div class="col-lg-4">
+            <!-- Quick Stats -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Hızlı Bilgiler
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <h4 class="text-primary">{{ customer.age_in_system }}</h4>
+                                <small class="text-muted">Sistemde Gün</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <h4 class="{% if customer.is_premium_customer %}text-success{% elif customer.needs_attention %}text-danger{% else %}text-warning{% endif %}">
+                                    {{ customer.color_category }}
+                                </h4>
+                                <small class="text-muted">Sınıf</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1">Müşteri Kategorisi</small>
+                        {% if customer.is_premium_customer %}
+                        <span class="badge bg-success">Premium Müşteri</span>
+                        {% elif customer.needs_attention %}
+                        <span class="badge bg-danger">Dikkat Gerektiren</span>
+                        {% else %}
+                        <span class="badge bg-warning">Standart Müşteri</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1">Öncelik Seviyesi</small>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar" 
+                                 style="width: {{ customer.get_color_priority|floatformat:0|add:'-7'|default:'1' }}0%; background-color: {{ customer.color }};"
+                                 role="progressbar">
+                                Seviye {{ customer.get_color_priority }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Hızlı İşlemler
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="tel:{{ customer.phone_number }}" class="btn btn-outline-primary">
+                            <i class="fas fa-phone me-2"></i>Ara
+                        </a>
+                        <a href="sms:{{ customer.phone_number }}" class="btn btn-outline-info">
+                            <i class="fas fa-sms me-2"></i>SMS Gönder
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary" onclick="copyAddress()">
+                            <i class="fas fa-copy me-2"></i>Adresi Kopyala
+                        </button>
+                        <a href="https://www.google.com/maps/search/{{ customer.get_full_address|urlencode }}" 
+                           target="_blank" 
+                           class="btn btn-outline-success">
+                            <i class="fas fa-map-marker-alt me-2"></i>Haritada Göster
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Color Change (for admins) -->
+            {% if can_edit %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-palette me-2"></i>Sınıf Değiştir
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        {% for color_code, color_name in customer_info.color_choices %}
+                        <div class="col-6">
+                            <button type="button" 
+                                    class="btn btn-outline-secondary btn-sm w-100 color-change-btn"
+                                    data-color="{{ color_code }}"
+                                    {% if customer.color == color_code %}disabled{% endif %}>
+                                <span class="color-indicator" style="background-color: {{ color_code }};"></span>
+                                {{ color_name|slice:":10" }}...
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.address-box {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    border-left: 3px solid var(--bs-primary);
+    font-size: 0.9rem;
+}
+
+.stat-item {
+    padding: 10px;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -37px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.timeline-content {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #dee2e6;
+}
+
+.color-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.progress {
+    background-color: #e9ecef;
+}
+
+.btn-group .btn {
+    white-space: nowrap;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Toggle customer status
+    $('.toggle-status-btn').on('click', function() {
+        const btn = $(this);
+        const customerId = btn.data('customer-id');
+        const currentStatus = btn.data('current-status') === 'true';
+        const action = currentStatus ? 'pasifleştir' : 'aktifleştir';
+        
+        if (!confirm(`Bu müşteriyi ${action}mek istediğinizden emin misiniz?`)) {
+            return;
+        }
+        
+        setButtonLoading(btn, true);
+        
+        $.ajax({
+            url: `{% url 'customers:ajax_toggle_status' customer.id %}`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    location.reload();
+                } else {
+                    showNotification(response.message, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Bir hata oluştu', 'error');
+            },
+            complete: function() {
+                setButtonLoading(btn, false);
+            }
+        });
+    });
+    
+    // Color change buttons
+    $('.color-change-btn').on('click', function() {
+        const btn = $(this);
+        const color = btn.data('color');
+        const colorName = btn.text().trim();
+        
+        if (!confirm(`Müşterinin sınıfını "${colorName}" olarak değiştirmek istediğinizden emin misiniz?`)) {
+            return;
+        }
+        
+        setButtonLoading(btn, true);
+        
+        $.ajax({
+            url: '{% url "customers:ajax_bulk_update_color" %}',
+            method: 'POST',
+            data: JSON.stringify({
+                customer_ids: [{{ customer.id }}],
+                color: color
+            }),
+            contentType: 'application/json',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    location.reload();
+                } else {
+                    showNotification(response.message, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Bir hata oluştu', 'error');
+            },
+            complete: function() {
+                setButtonLoading(btn, false);
+            }
+        });
+    });
+});
+
+function copyAddress() {
+    const address = `{{ customer.get_full_address|escapejs }}`;
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(address).then(function() {
+            showNotification('Adres kopyalandı', 'success');
+        });
+    } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = address;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showNotification('Adres kopyalandı', 'success');
+    }
+}
+</script>
+{% endblock %} 

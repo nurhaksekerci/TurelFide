@@ -1,0 +1,559 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ season.name }} - Yeni Ürün Ekle - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-plus me-2"></i>Yeni Ürün Ekle</h2>
+            <p class="text-muted"><strong>{{ season.name }}</strong> sezonu için yeni çeşit-anaç kombinasyonu</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'seasons:season_product_list' season.id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Ürün Listesi
+            </a>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-seedling me-2"></i>Ürün Bilgileri
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Product Selection -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="variety" class="form-label">
+                                    <i class="fas fa-spa me-1"></i>Çeşit *
+                                </label>
+                                <select class="form-select" id="variety" name="variety" required>
+                                    <option value="">Çeşit seçiniz...</option>
+                                    {% for variety in varieties %}
+                                    <option value="{{ variety.id }}" 
+                                            {% if form_data.variety == variety.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ variety.get_full_name }} ({{ variety.species.name }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    Ürün için çeşidi seçin
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="rootstock" class="form-label">
+                                    <i class="fas fa-tree me-1"></i>Anaç
+                                </label>
+                                <select class="form-select" id="rootstock" name="rootstock">
+                                    <option value="">Anaçsız</option>
+                                    {% for rootstock in rootstocks %}
+                                    <option value="{{ rootstock.id }}" 
+                                            {% if form_data.rootstock == rootstock.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ rootstock.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    İsteğe bağlı anaç seçimi
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Duration Settings -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6><i class="fas fa-clock me-2"></i>Üretim Süreleri (Gün)</h6>
+                                <p class="text-muted">Varsayılan süreler otomatik doldurulmuştur, istediğiniz değişiklikleri yapabilirsiniz</p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="rootstock_planting_duration" class="form-label">Anaç Ekim Süresi</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" 
+                                           id="rootstock_planting_duration" name="rootstock_planting_duration" 
+                                           value="{% if form_data.rootstock_planting_duration %}{{ form_data.rootstock_planting_duration }}{% else %}30{% endif %}" 
+                                           min="1" required>
+                                    <span class="input-group-text">gün</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="scion_planting_duration" class="form-label">Kalem Ekim Süresi</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" 
+                                           id="scion_planting_duration" name="scion_planting_duration" 
+                                           value="{% if form_data.scion_planting_duration %}{{ form_data.scion_planting_duration }}{% else %}45{% endif %}" 
+                                           min="1" required>
+                                    <span class="input-group-text">gün</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="single_stem_grafting_duration" class="form-label">Tek Gövde Aşılama Süresi</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" 
+                                           id="single_stem_grafting_duration" name="single_stem_grafting_duration" 
+                                           value="{% if form_data.single_stem_grafting_duration %}{{ form_data.single_stem_grafting_duration }}{% else %}60{% endif %}" 
+                                           min="1" required>
+                                    <span class="input-group-text">gün</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="double_stem_grafting_duration" class="form-label">Çift Gövde Aşılama Süresi</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" 
+                                           id="double_stem_grafting_duration" name="double_stem_grafting_duration" 
+                                           value="{% if form_data.double_stem_grafting_duration %}{{ form_data.double_stem_grafting_duration }}{% else %}75{% endif %}" 
+                                           min="1" required>
+                                    <span class="input-group-text">gün</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="head_formation_duration" class="form-label">Kafa Oluşturma Süresi</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" 
+                                           id="head_formation_duration" name="head_formation_duration" 
+                                           value="{% if form_data.head_formation_duration %}{{ form_data.head_formation_duration }}{% else %}90{% endif %}" 
+                                           min="1" required>
+                                    <span class="input-group-text">gün</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="waiting_on_room_duration" class="form-label">Oda Bekleme Süresi</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" 
+                                           id="waiting_on_room_duration" name="waiting_on_room_duration" 
+                                           value="{% if form_data.waiting_on_room_duration %}{{ form_data.waiting_on_room_duration }}{% else %}30{% endif %}" 
+                                           min="1" required>
+                                    <span class="input-group-text">gün</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Production Time Calculation -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-calculator me-2"></i>Toplam Üretim Süreleri</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="d-flex justify-content-between">
+                                                <span>Tek Gövde Toplam:</span>
+                                                <strong id="single-total">-</strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex justify-content-between">
+                                                <span>Çift Gövde Toplam:</span>
+                                                <strong id="double-total">-</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pricing Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6><i class="fas fa-money-bill me-2"></i>18 Aylık Fiyatlandırma (İsteğe Bağlı)</h6>
+                                <p class="text-muted">Ürün oluşturduktan sonra da fiyatları düzenleyebilirsiniz</p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Tek Gövde Fiyatları -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-seedling me-2"></i>Tek Gövde Fiyatları
+                                        </h6>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <table class="table table-sm mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Ay</th>
+                                                    <th>Fiyat (TL)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr><td><strong>1. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_1" value="{% if form_data.price_single_stem_1 %}{{ form_data.price_single_stem_1 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>2. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_2" value="{% if form_data.price_single_stem_2 %}{{ form_data.price_single_stem_2 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>3. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_3" value="{% if form_data.price_single_stem_3 %}{{ form_data.price_single_stem_3 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>4. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_4" value="{% if form_data.price_single_stem_4 %}{{ form_data.price_single_stem_4 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>5. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_5" value="{% if form_data.price_single_stem_5 %}{{ form_data.price_single_stem_5 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>6. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_6" value="{% if form_data.price_single_stem_6 %}{{ form_data.price_single_stem_6 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>7. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_7" value="{% if form_data.price_single_stem_7 %}{{ form_data.price_single_stem_7 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>8. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_8" value="{% if form_data.price_single_stem_8 %}{{ form_data.price_single_stem_8 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>9. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_9" value="{% if form_data.price_single_stem_9 %}{{ form_data.price_single_stem_9 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>10. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_10" value="{% if form_data.price_single_stem_10 %}{{ form_data.price_single_stem_10 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>11. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_11" value="{% if form_data.price_single_stem_11 %}{{ form_data.price_single_stem_11 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>12. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_12" value="{% if form_data.price_single_stem_12 %}{{ form_data.price_single_stem_12 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>13. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_13" value="{% if form_data.price_single_stem_13 %}{{ form_data.price_single_stem_13 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>14. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_14" value="{% if form_data.price_single_stem_14 %}{{ form_data.price_single_stem_14 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>15. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_15" value="{% if form_data.price_single_stem_15 %}{{ form_data.price_single_stem_15 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>16. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_16" value="{% if form_data.price_single_stem_16 %}{{ form_data.price_single_stem_16 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>17. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_17" value="{% if form_data.price_single_stem_17 %}{{ form_data.price_single_stem_17 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>18. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_single_stem_18" value="{% if form_data.price_single_stem_18 %}{{ form_data.price_single_stem_18 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Çift Gövde Fiyatları -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-tree me-2"></i>Çift Gövde Fiyatları
+                                        </h6>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <table class="table table-sm mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Ay</th>
+                                                    <th>Fiyat (TL)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr><td><strong>1. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_1" value="{% if form_data.price_double_stem_1 %}{{ form_data.price_double_stem_1 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>2. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_2" value="{% if form_data.price_double_stem_2 %}{{ form_data.price_double_stem_2 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>3. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_3" value="{% if form_data.price_double_stem_3 %}{{ form_data.price_double_stem_3 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>4. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_4" value="{% if form_data.price_double_stem_4 %}{{ form_data.price_double_stem_4 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>5. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_5" value="{% if form_data.price_double_stem_5 %}{{ form_data.price_double_stem_5 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>6. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_6" value="{% if form_data.price_double_stem_6 %}{{ form_data.price_double_stem_6 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>7. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_7" value="{% if form_data.price_double_stem_7 %}{{ form_data.price_double_stem_7 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>8. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_8" value="{% if form_data.price_double_stem_8 %}{{ form_data.price_double_stem_8 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>9. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_9" value="{% if form_data.price_double_stem_9 %}{{ form_data.price_double_stem_9 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>10. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_10" value="{% if form_data.price_double_stem_10 %}{{ form_data.price_double_stem_10 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>11. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_11" value="{% if form_data.price_double_stem_11 %}{{ form_data.price_double_stem_11 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>12. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_12" value="{% if form_data.price_double_stem_12 %}{{ form_data.price_double_stem_12 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>13. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_13" value="{% if form_data.price_double_stem_13 %}{{ form_data.price_double_stem_13 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>14. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_14" value="{% if form_data.price_double_stem_14 %}{{ form_data.price_double_stem_14 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>15. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_15" value="{% if form_data.price_double_stem_15 %}{{ form_data.price_double_stem_15 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>16. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_16" value="{% if form_data.price_double_stem_16 %}{{ form_data.price_double_stem_16 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>17. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_17" value="{% if form_data.price_double_stem_17 %}{{ form_data.price_double_stem_17 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                                <tr><td><strong>18. Ay</strong></td><td><input type="number" class="form-control form-control-sm" name="price_double_stem_18" value="{% if form_data.price_double_stem_18 %}{{ form_data.price_double_stem_18 }}{% else %}0{% endif %}" step="0.01" min="0" placeholder="0.00"></td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pricing Tools -->
+                        <div class="row mt-3 mb-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-tools me-2"></i>Hızlı Fiyat Araçları
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <!-- Tek Gövde Araçları -->
+                                            <div class="col-md-6">
+                                                <h6 class="text-primary mb-3"><i class="fas fa-seedling me-2"></i>Tek Gövde Araçları</h6>
+                                                
+                                                <!-- Sabit Fiyat -->
+                                                <div class="mb-3">
+                                                    <label class="form-label">Tüm Aylara Aynı Fiyat</label>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control" id="bulk-single-price" 
+                                                               step="0.01" min="0" placeholder="0.00">
+                                                        <button type="button" class="btn btn-outline-primary" 
+                                                                onclick="bulkFillSingle()">Uygula</button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Aylık Artış -->
+                                                <div class="mb-3">
+                                                    <label class="form-label">Aylık Artışlı Fiyat</label>
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <input type="number" class="form-control" id="single-start-price" 
+                                                                   step="0.01" min="0" placeholder="Başlangıç (TL)">
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <div class="input-group">
+                                                                <input type="number" class="form-control" id="single-increase-rate" 
+                                                                       step="0.1" min="0" placeholder="Artış">
+                                                                <span class="input-group-text">%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button" class="btn btn-outline-success mt-2 w-100" 
+                                                            onclick="applyMonthlyIncreaseSingle()">
+                                                        <i class="fas fa-chart-line me-2"></i>Aylık Artış Uygula
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Çift Gövde Araçları -->
+                                            <div class="col-md-6">
+                                                <h6 class="text-info mb-3"><i class="fas fa-tree me-2"></i>Çift Gövde Araçları</h6>
+                                                
+                                                <!-- Sabit Fiyat -->
+                                                <div class="mb-3">
+                                                    <label class="form-label">Tüm Aylara Aynı Fiyat</label>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control" id="bulk-double-price" 
+                                                               step="0.01" min="0" placeholder="0.00">
+                                                        <button type="button" class="btn btn-outline-info" 
+                                                                onclick="bulkFillDouble()">Uygula</button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Aylık Artış -->
+                                                <div class="mb-3">
+                                                    <label class="form-label">Aylık Artışlı Fiyat</label>
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <input type="number" class="form-control" id="double-start-price" 
+                                                                   step="0.01" min="0" placeholder="Başlangıç (TL)">
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <div class="input-group">
+                                                                <input type="number" class="form-control" id="double-increase-rate" 
+                                                                       step="0.1" min="0" placeholder="Artış">
+                                                                <span class="input-group-text">%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button" class="btn btn-outline-success mt-2 w-100" 
+                                                            onclick="applyMonthlyIncreaseDouble()">
+                                                        <i class="fas fa-chart-line me-2"></i>Aylık Artış Uygula
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Ortak Araçlar -->
+                                        <div class="row mt-3">
+                                            <div class="col-12">
+                                                <div class="border-top pt-3">
+                                                    <h6 class="text-secondary mb-3"><i class="fas fa-cogs me-2"></i>Ortak Araçlar</h6>
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <button type="button" class="btn btn-outline-warning w-100" 
+                                                                    onclick="clearAllPrices()">
+                                                                <i class="fas fa-eraser me-2"></i>Tüm Fiyatları Temizle
+                                                            </button>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <button type="button" class="btn btn-outline-secondary w-100" 
+                                                                    onclick="copyFromSingleToDouble()">
+                                                                <i class="fas fa-copy me-2"></i>Tek Gövde'den Çift Gövde'ye Kopyala
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Info Box -->
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-info-circle me-2"></i>Bilgi</h6>
+                            <p class="mb-2">Ürün oluşturduktan sonra:</p>
+                            <ul class="mb-0">
+                                <li>18 aylık tek ve çift gövde fiyatları belirleyebilirsiniz</li>
+                                <li>Üretim sürelerini tekrar düzenleyebilirsiniz</li>
+                                <li>Ürün durumunu aktif/pasif yapabilirsiniz</li>
+                            </ul>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'seasons:season_product_list' season.id %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>İptal
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Ürün Oluştur
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Toplam süre hesaplama
+function calculateTotals() {
+    const rootstock = parseInt(document.querySelector('[name="rootstock_planting_duration"]').value) || 0;
+    const scion = parseInt(document.querySelector('[name="scion_planting_duration"]').value) || 0;
+    const head = parseInt(document.querySelector('[name="head_formation_duration"]').value) || 0;
+    const waiting = parseInt(document.querySelector('[name="waiting_on_room_duration"]').value) || 0;
+    const singleGraft = parseInt(document.querySelector('[name="single_stem_grafting_duration"]').value) || 0;
+    const doubleGraft = parseInt(document.querySelector('[name="double_stem_grafting_duration"]').value) || 0;
+    
+    const singleTotal = rootstock + scion + head + waiting + singleGraft;
+    const doubleTotal = rootstock + scion + head + waiting + doubleGraft;
+    
+    document.getElementById('single-total').textContent = singleTotal + ' gün';
+    document.getElementById('double-total').textContent = doubleTotal + ' gün';
+}
+
+// Fiyat araçları
+function bulkFillSingle() {
+    const price = document.getElementById('bulk-single-price').value;
+    if (price) {
+        for (let i = 1; i <= 18; i++) {
+            const input = document.querySelector(`[name="price_single_stem_${i}"]`);
+            if (input) input.value = price;
+        }
+    }
+}
+
+function bulkFillDouble() {
+    const price = document.getElementById('bulk-double-price').value;
+    if (price) {
+        for (let i = 1; i <= 18; i++) {
+            const input = document.querySelector(`[name="price_double_stem_${i}"]`);
+            if (input) input.value = price;
+        }
+    }
+}
+
+function applyMonthlyIncreaseSingle() {
+    const startPrice = parseFloat(document.getElementById('single-start-price').value);
+    const increaseRate = parseFloat(document.getElementById('single-increase-rate').value);
+    
+    if (startPrice && increaseRate) {
+        for (let i = 1; i <= 18; i++) {
+            const input = document.querySelector(`[name="price_single_stem_${i}"]`);
+            if (input) {
+                // Her ay için kümülatif artış hesapla: başlangıç_fiyat * (1 + artış_oranı/100)^(ay-1)
+                const monthlyPrice = startPrice * Math.pow((1 + increaseRate / 100), (i - 1));
+                input.value = monthlyPrice.toFixed(2);
+            }
+        }
+        
+        // Başarı mesajı göster
+        const notification = document.createElement('div');
+        notification.className = 'alert alert-success alert-dismissible fade show mt-2';
+        notification.innerHTML = `
+            <strong>Başarılı!</strong> Tek gövde için aylık %${increaseRate} artışlı fiyatlar uygulandı.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.getElementById('single-start-price').parentNode.parentNode.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    } else {
+        alert('Lütfen başlangıç fiyatı ve artış oranını giriniz.');
+    }
+}
+
+function applyMonthlyIncreaseDouble() {
+    const startPrice = parseFloat(document.getElementById('double-start-price').value);
+    const increaseRate = parseFloat(document.getElementById('double-increase-rate').value);
+    
+    if (startPrice && increaseRate) {
+        for (let i = 1; i <= 18; i++) {
+            const input = document.querySelector(`[name="price_double_stem_${i}"]`);
+            if (input) {
+                // Her ay için kümülatif artış hesapla: başlangıç_fiyat * (1 + artış_oranı/100)^(ay-1)
+                const monthlyPrice = startPrice * Math.pow((1 + increaseRate / 100), (i - 1));
+                input.value = monthlyPrice.toFixed(2);
+            }
+        }
+        
+        // Başarı mesajı göster
+        const notification = document.createElement('div');
+        notification.className = 'alert alert-success alert-dismissible fade show mt-2';
+        notification.innerHTML = `
+            <strong>Başarılı!</strong> Çift gövde için aylık %${increaseRate} artışlı fiyatlar uygulandı.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.getElementById('double-start-price').parentNode.parentNode.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    } else {
+        alert('Lütfen başlangıç fiyatı ve artış oranını giriniz.');
+    }
+}
+
+function clearAllPrices() {
+    if (confirm('Tüm fiyatları temizlemek istediğinizden emin misiniz?')) {
+        const priceInputs = document.querySelectorAll('input[name^="price_"]');
+        priceInputs.forEach(input => {
+            input.value = '0';
+        });
+        
+        // Başarı mesajı
+        const notification = document.createElement('div');
+        notification.className = 'alert alert-warning alert-dismissible fade show mt-2';
+        notification.innerHTML = `
+            <strong>Temizlendi!</strong> Tüm fiyat alanları sıfırlandı.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.card-body').appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+}
+
+function copyFromSingleToDouble() {
+    if (confirm('Tek gövde fiyatlarını çift gövde alanlarına kopyalamak istediğinizden emin misiniz?')) {
+        let copiedCount = 0;
+        
+        for (let i = 1; i <= 18; i++) {
+            const singleInput = document.querySelector(`[name="price_single_stem_${i}"]`);
+            const doubleInput = document.querySelector(`[name="price_double_stem_${i}"]`);
+            
+            if (singleInput && doubleInput && singleInput.value && singleInput.value !== '0') {
+                doubleInput.value = singleInput.value;
+                copiedCount++;
+            }
+        }
+        
+        // Başarı mesajı
+        const notification = document.createElement('div');
+        notification.className = 'alert alert-info alert-dismissible fade show mt-2';
+        notification.innerHTML = `
+            <strong>Kopyalandı!</strong> ${copiedCount} adet fiyat tek gövde'den çift gövde'ye kopyalandı.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.card-body').appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Duration inputs için event listener
+    const durationInputs = document.querySelectorAll('input[name$="_duration"]');
+    durationInputs.forEach(input => {
+        input.addEventListener('input', calculateTotals);
+    });
+    
+    // İlk hesaplama
+    calculateTotals();
+});
+</script>
+{% endblock %} 

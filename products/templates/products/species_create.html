@@ -1,0 +1,60 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Yeni Tür Ekle - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-plus me-2"></i>Yeni Tür Ekle</h2>
+            <p class="text-muted">Domates, Biber, Patlıcan vb. yeni bir tür ekleyin</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'products:species_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Tür Listesi
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-leaf me-2"></i>Tür Bilgileri</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Tür Adı *</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   placeholder="Örnek: Domates, Biber, Patlıcan" required>
+                            <div class="form-text">Türün tam adını yazın (en az 2 karakter)</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'products:species_list' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-2"></i>İptal
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Kaydet
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('name');
+    
+    // Auto capitalize first letter
+    nameInput.addEventListener('input', function() {
+        this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1);
+    });
+});
+</script>
+{% endblock %} 

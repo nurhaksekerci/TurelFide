@@ -1,0 +1,331 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Dashboard - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card text-white bg-gradient-primary">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="card-title mb-2">
+                                <i class="fas fa-sun me-2"></i>
+                                Hoş geldiniz, {{ user.get_full_name|default:user.username }}!
+                            </h2>
+                            <p class="card-text mb-0">
+                                <span class="badge bg-light text-dark me-2">{{ role_display }}</span>
+                                Bugün {{ "now"|date:"d F Y, l" }}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <i class="fas fa-user-circle fa-5x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        {% if user.role == 'admin' or user.role == 'readonly' or user.role == 'product_manager' %}
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                    <h4 class="card-title">Kullanıcılar</h4>
+                    <p class="card-text">Sistem kullanıcılarını yönetin</p>
+                    <a href="{% url 'accounts:user_list' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i>Görüntüle
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                    <h4 class="card-title">Müşteriler</h4>
+                    <p class="card-text">Müşterileri yönetin</p>
+                    <a href="{% url 'customers:list' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i>Görüntüle
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-alt fa-3x text-primary mb-3"></i>
+                    <h4 class="card-title">Sezonlar</h4>
+                    <p class="card-text">Sezonları yönetin</p>
+                    <a href="{% url 'seasons:season_list' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i>Görüntüle
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-danger mb-3"></i>
+                    <h4 class="card-title">Siparişler</h4>
+                    <p class="card-text">Siparişleri yönetin</p>
+                    <a href="{% url 'orders:season_selection' %}" class="btn btn-danger btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i>Görüntüle
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if user.role == 'product_manager' or user.role == 'admin' %}
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-box fa-3x text-success mb-3"></i>
+                    <h4 class="card-title">Ürünler</h4>
+                    <p class="card-text">Ürün kataloğunu yönetin</p>
+                    <a href="{% url 'products:dashboard' %}" class="btn btn-success btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i>Görüntüle
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if 'plant' in user.role or user.role == 'admin' %}
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-seedling fa-3x text-info mb-3"></i>
+                    <h4 class="card-title">Ekim</h4>
+                    <p class="card-text">Ekim süreçlerini takip edin</p>
+                    <a href="{% url 'orders:planting_season_selection' %}" class="btn btn-info btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i>Görüntüle
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if 'seed' in user.role or user.role == 'admin' %}
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-leaf fa-3x text-warning mb-3"></i>
+                    <h4 class="card-title">Aşılama</h4>
+                    <p class="card-text">Aşı süreçlerini yönetin</p>
+                    <a href="#!" class="btn btn-warning btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i>Görüntüle
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if 'shipping' in user.role or user.role == 'admin' %}
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-truck fa-3x text-secondary mb-3"></i>
+                    <h4 class="card-title">Sevkiyat</h4>
+                    <p class="card-text">Sevkiyat işlemlerini takip edin</p>
+                    <a href="#!" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i>Görüntüle
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activity & Quick Actions -->
+    <div class="row">
+        <!-- Recent Activity -->
+        <div class="col-lg-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock me-2"></i>Son Aktiviteler
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title">Sisteme giriş yapıldı</h6>
+                                <p class="timeline-text text-muted">{{ "now"|date:"H:i" }}</p>
+                            </div>
+                        </div>
+                        
+                        {% if user.role == 'admin' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title">Admin yetkilerinde oturum açıldı</h6>
+                                <p class="timeline-text text-muted">Tüm sistem fonksiyonlarına erişim mevcut</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title">Dashboard görüntüleniyor</h6>
+                                <p class="timeline-text text-muted">{{ role_display }} rolü ile aktif</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <p class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Daha fazla aktivite için ilgili modülleri ziyaret edin
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Hızlı İşlemler
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'accounts:profile' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-user-edit me-2"></i>Profili Düzenle
+                        </a>
+                        
+                        {% if can_manage_users %}
+                        <a href="{% url 'accounts:create_user' %}" class="btn btn-outline-success">
+                            <i class="fas fa-user-plus me-2"></i>Yeni Kullanıcı
+                        </a>
+                        {% endif %}
+                        
+                        {% if user.role == 'admin' %}
+                        <a href="/admin/" class="btn btn-outline-danger" target="_blank">
+                            <i class="fas fa-cogs me-2"></i>Admin Panel
+                        </a>
+                        {% endif %}
+                        
+                        <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#helpModal">
+                            <i class="fas fa-question-circle me-2"></i>Yardım
+                        </button>
+                        
+                        <a href="{% url 'accounts:logout' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-sign-out-alt me-2"></i>Çıkış Yap
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-question-circle me-2"></i>Yardım & Kılavuz
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-lock me-2"></i>PIN Güvenliği</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>PIN kodunuzu kimseyle paylaşmayın</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Düzenli olarak değiştirin</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Basit kombinasyonlar kullanmayın</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-navigation me-2"></i>Navigasyon</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Üst menüden modüllere erişin</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Profilinizi güncel tutun</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Çıkış yapmayı unutmayın</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-phone me-2"></i>
+                        Teknik destek için: <strong>{{ user.phone_number|default:"0XXX XXX XX XX" }}</strong>
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -25px;
+    top: 5px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 3px #dee2e6;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.timeline-title {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.timeline-text {
+    margin-bottom: 0;
+    font-size: 0.8rem;
+}
+</style>
+{% endblock %} 

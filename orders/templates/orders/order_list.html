@@ -1,0 +1,896 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ season.name }} - Sipariş Detayları{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Ekim tarihi renklendirme stilleri */
+    .table-success {
+        background-color: rgba(40, 167, 69, 0.2) !important;
+        color: #155724;
+    }
+    .table-warning {
+        background-color: rgba(255, 193, 7, 0.2) !important;
+        color: #856404;
+    }
+    .table-danger {
+        background-color: rgba(220, 53, 69, 0.2) !important;
+        color: #721c24;
+    }
+    
+    /* Hover efekti */
+    .table tbody tr:hover .table-success {
+        background-color: rgba(40, 167, 69, 0.3) !important;
+    }
+    .table tbody tr:hover .table-warning {
+        background-color: rgba(255, 193, 7, 0.3) !important;
+    }
+    .table tbody tr:hover .table-danger {
+        background-color: rgba(220, 53, 69, 0.3) !important;
+    }
+    
+    /* OrderItem durum badge'leri için CSS */
+    .badge-item-status {
+        font-size: 0.7em;
+        padding: 0.25em 0.5em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>
+                <i class="fas fa-shopping-cart me-2"></i>{{ season.name }} - Sipariş Detayları
+                {% if season.is_active %}
+                    <span class="badge bg-success ms-2">AKTİF</span>
+                {% endif %}
+            </h2>
+            <p class="text-muted">{{ season.start_date|date:"d F Y" }} tarihinde başlayan sezon - Tüm sipariş kalemleri</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{% url 'orders:order_create' season.id %}" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>Yeni Sipariş
+                </a>
+                <a href="{% url 'orders:planting_list' season.id %}" class="btn btn-outline-warning">
+                    <i class="fas fa-seedling me-2"></i>Ekim Takip
+                </a>
+                <a href="{% url 'orders:season_statistics' season.id %}" class="btn btn-outline-info">
+                    <i class="fas fa-chart-bar me-2"></i>İstatistikler
+                </a>
+                <a href="{% url 'orders:season_export' season.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-download me-2"></i>Dışa Aktar
+                </a>
+            </div>
+            <div class="mt-2">
+                <a href="{% url 'orders:season_selection' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i>Sezon Seçimi
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ stats.total_orders }}</h4>
+                            <span>Toplam Sipariş</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-shopping-cart fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ stats.total_amount|floatformat:0 }} TL</h4>
+                            <span>Toplam Tutar</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-lira-sign fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ stats.pending_orders }}</h4>
+                            <span>Bekleyen Sipariş</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ stats.overdue_orders }}</h4>
+                            <span>Geciken Sipariş</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ekim Tarihi Renklendirme Açıklaması -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h6 class="alert-heading mb-2">
+                    <i class="fas fa-info-circle me-2"></i>Ekim Tarihi Renklendirmesi
+                </h6>
+                <div class="row">
+                    <div class="col-md-3">
+                        <span class="badge bg-success me-2">Yeşil</span>
+                        <small>Zamanı geldi (7-14 gün kaldı)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="badge bg-warning me-2">Sarı</span>
+                        <small>Yaklaşıyor (7 gün kaldı)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="badge bg-danger me-2">Kırmızı</span>
+                        <small>Gecikmiş tarih</small>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">
+                            <em>* Sadece Taslak, Onaylandı ve Bekliyor durumlarında gösterilir</em>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Anaç Ekim Sistemi Açıklaması -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h6 class="alert-heading mb-2">
+                    <i class="fas fa-seedling me-2"></i>Anaç Ekim Sistemi
+                </h6>
+                <div class="row">
+                    <div class="col-md-4">
+                        <strong>Seçilebilir Kalemler:</strong>
+                        <small class="d-block">Bekliyor durumunda + Anaçlı ürünler</small>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>İşlem:</strong>
+                        <small class="d-block">Anaç ekime gönderilir + Ekim talep kartı oluşur</small>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Sonuç:</strong>
+                        <small class="d-block">Kalem durumu "Anaç Gönderildi" olur</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filtreler</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Durum</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">Tümü</option>
+                        {% for choice in status_choices %}
+                            <option value="{{ choice.0 }}" {% if status_filter == choice.0 %}selected{% endif %}>
+                                {{ choice.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="customer" class="form-label">Müşteri</label>
+                    <select name="customer" id="customer" class="form-select">
+                        <option value="">Tümü</option>
+                        {% for customer in customers %}
+                            <option value="{{ customer.id }}" {% if customer_filter == customer.id|stringformat:"s" %}selected{% endif %}>
+                                {{ customer.first_name }} {{ customer.last_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="urgent" class="form-label">Acil Durum</label>
+                    <select name="urgent" id="urgent" class="form-select">
+                        <option value="">Tümü</option>
+                        <option value="1" {% if urgent_filter == "1" %}selected{% endif %}>Sadece Acil</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>Filtrele
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-grid">
+                        <a href="{% url 'orders:order_list' season.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Temizle
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Orders List -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Sipariş Kalemleri
+                </h5>
+                <div class="d-flex align-items-center">
+                    <span class="text-muted me-3">{{ total_items }} kalem gösteriliyor</span>
+                    <button type="button" id="bulkRootstockBtn" class="btn btn-success btn-sm" style="display: none;" onclick="showPlantingModal()">
+                        <i class="fas fa-seedling me-2"></i>Seçilenleri Anaç Ekime Gönder
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if orders %}
+            <form id="bulkPlantingForm" method="POST" action="{% url 'orders:bulk_send_to_rootstock_planting' season.id %}">
+                {% csrf_token %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                                        <label class="form-check-label" for="selectAll"></label>
+                                    </div>
+                                </th>
+                                <th>SİPARİŞ DURUM</th>
+                                <th>İLERLEME</th>
+                                <th>ADI</th>
+                                <th>SOYADI</th>
+                                <th>TELEFON</th>
+                                <th>MAHALLE</th>
+                                <th>İLÇE</th>
+                                <th>İL</th>
+                                <th>ÜRÜN</th>
+                                <th>ANAÇ</th>
+                                <th>TÜRÜ</th>
+                                <th>GÖVDE</th>
+                                <th>VİYOL TİPİ</th>
+                                <th>MİKTAR</th>
+                                <th>VİOL ADEDİ</th>
+                                <th>TESLİM TARİHİ</th>
+                                <th>FİİLİ SEVK TARİHİ</th>
+                                <th>ANAÇ EKİM TARİHİ</th>
+                                <th>KALEM EKİM TARİHİ</th>
+                                <th>AŞILAMA</th>
+                                <th>KAFA KESİMİ</th>
+                                <th>TOPLAM FİYAT</th>
+                                <th>İŞLEMLER</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                                {% for item in order.items.all %}
+                                <tr>
+                                    <td>
+                                        {% if item.status == 'waiting' and item.rootstock %}
+                                        <div class="form-check">
+                                            <input class="form-check-input item-checkbox" type="checkbox" 
+                                                   name="selected_items" value="{{ item.id }}" 
+                                                   data-planting-type="rootstock"
+                                                   onchange="updateBulkButton()">
+                                        </div>
+                                        {% elif item.status == 'rootstock_planting_planted' %}
+                                        <div class="form-check">
+                                            <input class="form-check-input item-checkbox" type="checkbox" 
+                                                   name="selected_items" value="{{ item.id }}" 
+                                                   data-planting-type="scion"
+                                                   onchange="updateBulkButton()">
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if order.status == 'draft' %}
+                                            <span class="badge bg-secondary">{{ order.get_status_display }}</span>
+                                        {% elif order.status == 'confirmed' %}
+                                            <span class="badge bg-primary">{{ order.get_status_display }}</span>
+                                        {% elif order.status == 'waiting' %}
+                                            <span class="badge bg-info">{{ order.get_status_display }}</span>
+                                        {% elif order.status == 'awaiting_shipment' %}
+                                            <span class="badge bg-success">{{ order.get_status_display }}</span>
+                                        {% elif order.status == 'shipped' %}
+                                            <span class="badge bg-success">{{ order.get_status_display }}</span>
+                                        {% elif order.status == 'delivered' %}
+                                            <span class="badge bg-success">{{ order.get_status_display }}</span>
+                                        {% elif order.status == 'cancelled' %}
+                                            <span class="badge bg-danger">{{ order.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ order.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.status == 'waiting' %}
+                                            <span class="badge bg-secondary badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'rootstock_planting_sent' %}
+                                            <span class="badge bg-info badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'rootstock_planting_confirmed' %}
+                                            <span class="badge bg-primary badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'rootstock_planting_planted' %}
+                                            <span class="badge bg-success badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'scion_planting_sent' %}
+                                            <span class="badge bg-info badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'scion_planting_confirmed' %}
+                                            <span class="badge bg-primary badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'scion_planting_planted' %}
+                                            <span class="badge bg-success badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'grafting_sent' %}
+                                            <span class="badge bg-warning badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'grafting_confirmed' %}
+                                            <span class="badge bg-primary badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'grafting_planted' %}
+                                            <span class="badge bg-success badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'head_formation_sent' %}
+                                            <span class="badge bg-warning badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'head_formation_confirmed' %}
+                                            <span class="badge bg-primary badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'head_formation_formed' %}
+                                            <span class="badge bg-success badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'cutting_sent' %}
+                                            <span class="badge bg-warning badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'cutting_confirmed' %}
+                                            <span class="badge bg-primary badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'cutting_cut' %}
+                                            <span class="badge bg-success badge-item-status">{{ item.get_status_display }}</span>
+                                        {% elif item.status == 'ready_for_shipment' %}
+                                            <span class="badge bg-success badge-item-status">{{ item.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary badge-item-status">{{ item.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ order.customer.first_name }}</td>
+                                    <td>{{ order.customer.last_name }}</td>
+                                    <td>{{ order.customer.phone_number|default:"-" }}</td>
+                                    <td>{{ order.customer.neighborhood|default:"-" }}</td>
+                                    <td>{{ order.customer.district|default:"-" }}</td>
+                                    <td>{{ order.customer.city|default:"-" }}</td>
+                                    <td>
+                                        {% if item.variety %}
+                                            {{ item.variety.name }}
+                                        {% elif item.season_product.variety %}
+                                            {{ item.season_product.variety.name }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.rootstock %}
+                                            {{ item.rootstock.name }}
+                                        {% elif item.season_product.rootstock %}
+                                            {{ item.season_product.rootstock.name }}
+                                        {% else %}
+                                            Anaçsız
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.variety.species %}
+                                            {{ item.variety.species.name }}
+                                        {% elif item.season_product.variety.species %}
+                                            {{ item.season_product.variety.species.name }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.get_stem_type_display }}</td>
+                                    <td>{{ item.viol_type }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>{{ item.viol_count }}</td>
+                                    <td>{{ order.requested_delivery_date|date:"d.m.Y"|default:"-" }}</td>
+                                    <td>{{ order.actual_shipment_date|date:"d.m.Y"|default:"-" }}</td>
+                                    <td class="{{ item.rootstock_bg_color }}" {% if item.rootstock_urgency_text %}title="{{ item.rootstock_urgency_text }}"{% endif %}>
+                                        {{ item.rootstock_planting_date|date:"d.m.Y"|default:"-" }}
+                                    </td>
+                                    <td class="{{ item.scion_bg_color }}" {% if item.scion_urgency_text %}title="{{ item.scion_urgency_text }}"{% endif %}>
+                                        {{ item.scion_planting_date|date:"d.m.Y"|default:"-" }}
+                                    </td>
+                                    <td>{{ item.grafting_date|date:"d.m.Y"|default:"-" }}</td>
+                                    <td>{{ item.head_formation_date|date:"d.m.Y"|default:"-" }}</td>
+                                    <td>{{ item.total_price|floatformat:2 }} TL</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'orders:order_detail' season.id order.id %}" 
+                                               class="btn btn-primary btn-sm" 
+                                               title="Sipariş Detayı">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'orders:order_item_edit' season.id order.id item.id %}" 
+                                               class="btn btn-warning btn-sm" 
+                                               title="Kalemi Düzenle">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form method="POST" 
+                                                  action="{% url 'orders:order_item_delete' season.id order.id item.id %}" 
+                                                  style="display: inline;"
+                                                  onsubmit="return confirm('Bu kalemi silmek istediğinizden emin misiniz?')">
+                                                {% csrf_token %}
+                                                <button type="submit" 
+                                                        class="btn btn-danger btn-sm" 
+                                                        title="Kalemi Sil">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% empty %}
+                            <tr>
+                                <td colspan="24" class="text-center py-3">
+                                    <span class="text-muted">Bu sezon için henüz hiç sipariş verilmemiş.</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+
+            <!-- Pagination -->
+            {% if orders.has_other_pages %}
+            <div class="card-footer">
+                <nav aria-label="Sayfa navigasyonu">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if orders.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ orders.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if customer_filter %}&customer={{ customer_filter }}{% endif %}{% if urgent_filter %}&urgent={{ urgent_filter }}{% endif %}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in orders.paginator.page_range %}
+                            {% if orders.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > orders.number|add:'-3' and num < orders.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if customer_filter %}&customer={{ customer_filter }}{% endif %}{% if urgent_filter %}&urgent={{ urgent_filter }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if orders.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ orders.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if customer_filter %}&customer={{ customer_filter }}{% endif %}{% if urgent_filter %}&urgent={{ urgent_filter }}{% endif %}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">Henüz sipariş bulunamadı</h5>
+                <p class="text-muted">Bu sezon için henüz hiç sipariş verilmemiş.</p>
+                <a href="{% url 'orders:order_create' season.id %}" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>İlk Siparişi Verin
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Anaç Ekim Modal -->
+<div class="modal fade" id="plantingModal" tabindex="-1" aria-labelledby="plantingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="plantingModalLabel">
+                    <i class="fas fa-seedling me-2"></i>Anaç Ekim Talep Kartları
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="plantingRequestForm" method="POST" action="{% url 'orders:bulk_send_to_rootstock_planting' season.id %}">
+                    {% csrf_token %}
+                    <div id="plantingGroups">
+                        <!-- Groups will be populated by JavaScript -->
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-success" onclick="submitPlantingRequests()">
+                    <i class="fas fa-seedling me-2"></i>Ekim Taleplerini Oluştur
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleSelectAll(selectAllCheckbox) {
+    const checkboxes = document.querySelectorAll('.item-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    updateBulkButton();
+}
+
+function updateBulkButton() {
+    const checkboxes = document.querySelectorAll('.item-checkbox');
+    const checkedBoxes = document.querySelectorAll('.item-checkbox:checked:not(:disabled)');
+    const bulkBtn = document.getElementById('bulkRootstockBtn');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    
+    // İlk seçilen ürünün anaç ve ekim türü bilgisini al
+    let firstSelectedRootstock = null;
+    let firstSelectedPlantingType = null;
+    
+    if (checkedBoxes.length > 0) {
+        const firstCheckbox = checkedBoxes[0];
+        const firstRow = firstCheckbox.closest('tr');
+        firstSelectedRootstock = firstRow.cells[10].textContent.trim(); // ANAÇ sütunu (10. sütun)
+        firstSelectedPlantingType = firstCheckbox.dataset.plantingType;
+    }
+    
+    // Diğer checkbox'ları anaç ve ekim türü bilgisine göre enable/disable et
+    checkboxes.forEach(checkbox => {
+        if (checkbox.checked) return; // Zaten seçili olanları dokunma
+        
+        const row = checkbox.closest('tr');
+        const rootstock = row.cells[10].textContent.trim(); // ANAÇ sütunu
+        const plantingType = checkbox.dataset.plantingType;
+        
+        if (firstSelectedRootstock && firstSelectedPlantingType) {
+            // Hem anaç hem de ekim türü farklıysa disable et
+            if (rootstock !== firstSelectedRootstock || plantingType !== firstSelectedPlantingType) {
+                checkbox.disabled = true;
+                row.style.opacity = '0.5';
+            } else {
+                checkbox.disabled = false;
+                row.style.opacity = '1';
+            }
+        } else {
+            checkbox.disabled = false;
+            row.style.opacity = '1';
+        }
+    });
+    
+    // Eğer hiç seçili ürün yoksa tüm checkbox'ları enable et
+    if (checkedBoxes.length === 0) {
+        checkboxes.forEach(checkbox => {
+            checkbox.disabled = false;
+            checkbox.closest('tr').style.opacity = '1';
+        });
+    }
+    
+    // Bulk button'u göster/gizle ve metni güncelle
+    if (checkedBoxes.length > 0) {
+        const plantingTypeText = firstSelectedPlantingType === 'rootstock' ? 'Anaç' : 'Kalem';
+        bulkBtn.style.display = 'inline-block';
+        bulkBtn.innerHTML = `<i class="fas fa-seedling me-2"></i>Seçilenleri ${plantingTypeText} Ekime Gönder (${checkedBoxes.length})`;
+    } else {
+        bulkBtn.style.display = 'none';
+    }
+    
+    // Select all checkbox durumunu güncelle
+    const enabledCheckboxes = document.querySelectorAll('.item-checkbox:not(:disabled)');
+    const checkedEnabledBoxes = document.querySelectorAll('.item-checkbox:checked:not(:disabled)');
+    
+    if (checkedEnabledBoxes.length === enabledCheckboxes.length && enabledCheckboxes.length > 0) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+    } else if (checkedEnabledBoxes.length > 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = true;
+    } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    }
+}
+
+// Checkbox değişikliği için event listener ekle
+function setupCheckboxListeners() {
+    const checkboxes = document.querySelectorAll('.item-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateBulkButton();
+        });
+    });
+}
+
+function showPlantingModal() {
+    const checkedBoxes = document.querySelectorAll('.item-checkbox:checked:not(:disabled)');
+    
+    if (checkedBoxes.length === 0) {
+        alert('Lütfen en az bir sipariş kalemi seçin.');
+        return;
+    }
+    
+    // Ekim türünü tespit et
+    const firstCheckbox = checkedBoxes[0];
+    const plantingType = firstCheckbox.dataset.plantingType;
+    const isRootstockPlanting = plantingType === 'rootstock';
+    
+    // Modal başlığını güncelle
+    const modalTitle = document.getElementById('plantingModalLabel');
+    modalTitle.innerHTML = `<i class="fas fa-seedling me-2"></i>${isRootstockPlanting ? 'Anaç' : 'Kalem'} Ekim Talep Kartları`;
+    
+    // Seçilen kalemleri SADECE anaç türlerine göre grupla
+    const groups = {};
+    let totalOrderQuantity = 0;
+    let totalViolCount = 0;
+    
+    checkedBoxes.forEach(checkbox => {
+        const row = checkbox.closest('tr');
+        const itemId = checkbox.value;
+        const variety = row.cells[9].textContent.trim(); // ÜRÜN sütunu
+        const rootstock = row.cells[10].textContent.trim(); // ANAÇ sütunu
+        const quantity = parseInt(row.cells[14].textContent.trim()); // MİKTAR sütunu
+        const violCount = parseInt(row.cells[15].textContent.trim()); // VİOL ADEDİ sütunu
+        
+        // Genel toplam hesaplamaları
+        totalOrderQuantity += quantity;
+        totalViolCount += violCount;
+        
+        // Sadece anaç bazında grupla
+        const key = rootstock;
+        
+        if (!groups[key]) {
+            groups[key] = {
+                rootstock: rootstock,
+                varieties: new Set(), // Çeşitleri toplamak için Set kullan
+                items: [],
+                totalQuantity: 0,
+                totalViolCount: 0
+            };
+        }
+        
+        groups[key].varieties.add(variety);
+        groups[key].items.push(itemId);
+        groups[key].totalQuantity += quantity;
+        groups[key].totalViolCount += violCount;
+    });
+    
+    // Modal içeriğini oluştur
+    const plantingGroupsDiv = document.getElementById('plantingGroups');
+    plantingGroupsDiv.innerHTML = '';
+    
+    // Toplam bilgiler bölümü
+    const summaryDiv = document.createElement('div');
+    summaryDiv.className = 'alert alert-info mb-4';
+    summaryDiv.innerHTML = `
+        <h6><i class="fas fa-info-circle me-2"></i>${isRootstockPlanting ? 'Anaç' : 'Kalem'} Ekim Özeti</h6>
+        <div class="row">
+            <div class="col-md-4">
+                <strong>Toplam Sipariş:</strong><br>
+                <span class="h5 text-primary">${totalOrderQuantity} fide</span><br>
+                <small class="text-muted">${totalViolCount} viol</small>
+            </div>
+            <div class="col-md-4">
+                <strong>Seçilen Anaç Grubu:</strong><br>
+                <span class="h6">${Object.keys(groups).length} farklı anaç</span>
+            </div>
+            <div class="col-md-4">
+                <label for="totalPlantingQuantity" class="form-label"><strong>Toplam ${isRootstockPlanting ? 'Anaç' : 'Kalem'} Ekim Adedi:</strong></label>
+                <input type="number" id="totalPlantingQuantity" class="form-control form-control-lg" 
+                       value="${totalOrderQuantity}" min="1" 
+                       placeholder="Toplam ekim adedi girin">
+                <small class="text-muted">Kayıp ve rezerv için fazla ekim yapabilirsiniz</small>
+            </div>
+        </div>
+    `;
+    plantingGroupsDiv.appendChild(summaryDiv);
+    
+    // Ekim türü bilgisini hidden input olarak ekle
+    const plantingTypeInput = document.createElement('input');
+    plantingTypeInput.type = 'hidden';
+    plantingTypeInput.name = 'planting_type';
+    plantingTypeInput.value = plantingType;
+    summaryDiv.appendChild(plantingTypeInput);
+    
+    // Detay gruplar bölümü
+    const detailHeader = document.createElement('div');
+    detailHeader.innerHTML = `<h6><i class="fas fa-list me-2"></i>Anaç Grupları Detayı</h6>`;
+    plantingGroupsDiv.appendChild(detailHeader);
+    
+    Object.keys(groups).forEach(key => {
+        const group = groups[key];
+        const varietiesArray = Array.from(group.varieties);
+        
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'mb-3 p-3 border rounded bg-light';
+        groupDiv.innerHTML = `
+            <div class="row align-items-center">
+                <div class="col-md-5">
+                    <h6 class="mb-1"><strong>Anaç: ${group.rootstock}</strong></h6>
+                    <small class="text-muted">Çeşitler: ${varietiesArray.join(', ')}</small>
+                    <br><small class="text-info">${varietiesArray.length} farklı çeşit</small>
+                </div>
+                <div class="col-md-3 text-center">
+                    <small class="text-muted">Sipariş Miktarı</small>
+                    <div><strong>${group.totalQuantity} fide</strong></div>
+                    <div><small>${group.totalViolCount} viol</small></div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Bu Anaç İçin ${isRootstockPlanting ? 'Anaç' : 'Kalem'} Ekim Adedi</label>
+                    <input type="number" class="form-control planting-quantity group-quantity" 
+                           name="planting_quantity_${key}" 
+                           value="${group.totalQuantity}" 
+                           min="1"
+                           data-group="${key}"
+                           data-original="${group.totalQuantity}">
+                    <small class="text-muted">Sipariş: ${group.totalQuantity}</small>
+                </div>
+            </div>
+            ${group.items.map(itemId => `<input type="hidden" name="selected_items" value="${itemId}">`).join('')}
+        `;
+        
+        plantingGroupsDiv.appendChild(groupDiv);
+    });
+    
+    // Toplam ekim adedi değiştiğinde grup adedlerini otomatik dağıt
+    document.getElementById('totalPlantingQuantity').addEventListener('input', function() {
+        distributeQuantityToGroups();
+    });
+    
+    // Modal'ı göster
+    const modal = new bootstrap.Modal(document.getElementById('plantingModal'));
+    modal.show();
+}
+
+// Toplam ekim adedini gruplara orantılı olarak dağıt
+function distributeQuantityToGroups() {
+    const totalPlantingInput = document.getElementById('totalPlantingQuantity');
+    const groupInputs = document.querySelectorAll('.group-quantity');
+    
+    const totalPlantingQuantity = parseInt(totalPlantingInput.value) || 0;
+    
+    if (totalPlantingQuantity <= 0) {
+        return;
+    }
+    
+    // Her grubun orijinal sipariş miktarını al
+    let totalOriginalQuantity = 0;
+    const groupData = [];
+    
+    groupInputs.forEach(input => {
+        const originalQuantity = parseInt(input.dataset.original);
+        totalOriginalQuantity += originalQuantity;
+        groupData.push({
+            input: input,
+            originalQuantity: originalQuantity
+        });
+    });
+    
+    // Orantılı dağıtım yap
+    let remainingQuantity = totalPlantingQuantity;
+    
+    groupData.forEach((group, index) => {
+        if (index === groupData.length - 1) {
+            // Son gruba kalan miktarı ver (yuvarlama hatalarını engellemek için)
+            group.input.value = remainingQuantity;
+        } else {
+            // Orantılı hesaplama
+            const proportion = group.originalQuantity / totalOriginalQuantity;
+            const groupQuantity = Math.round(totalPlantingQuantity * proportion);
+            group.input.value = groupQuantity;
+            remainingQuantity -= groupQuantity;
+        }
+    });
+}
+
+function submitPlantingRequests() {
+    // Toplam ekim adedi validasyonu
+    const totalPlantingInput = document.getElementById('totalPlantingQuantity');
+    const totalPlantingQuantity = parseInt(totalPlantingInput.value) || 0;
+    
+    if (totalPlantingQuantity <= 0) {
+        alert('Lütfen geçerli toplam ekim adedi girin (1 veya daha fazla).');
+        totalPlantingInput.classList.add('is-invalid');
+        return;
+    } else {
+        totalPlantingInput.classList.remove('is-invalid');
+    }
+    
+    // Grup adedi validasyonu
+    const quantityInputs = document.querySelectorAll('.planting-quantity');
+    let isValid = true;
+    let totalGroupQuantity = 0;
+    
+    quantityInputs.forEach(input => {
+        const value = parseInt(input.value);
+        totalGroupQuantity += value;
+        
+        if (value <= 0) {
+            isValid = false;
+            input.classList.add('is-invalid');
+        } else {
+            input.classList.remove('is-invalid');
+        }
+    });
+    
+    if (!isValid) {
+        alert('Lütfen her grup için geçerli ekim adedi girin (1 veya daha fazla).');
+        return;
+    }
+    
+    // Toplam kontrol - grup toplamları toplam ekim adedine eşit olmalı
+    if (totalGroupQuantity !== totalPlantingQuantity) {
+        if (!confirm(`Uyarı: Grup toplamları (${totalGroupQuantity}) ile toplam ekim adedi (${totalPlantingQuantity}) eşleşmiyor. Devam edilsin mi?`)) {
+            distributeQuantityToGroups();
+            return;
+        }
+    }
+    
+    // Toplam ekim adedini forma hidden input olarak ekle
+    const form = document.getElementById('plantingRequestForm');
+    
+    // Önceki total_planting_quantity input'u varsa kaldır
+    const existingTotalInput = form.querySelector('input[name="total_planting_quantity"]');
+    if (existingTotalInput) {
+        existingTotalInput.remove();
+    }
+    
+    // Yeni total_planting_quantity input'u ekle
+    const totalInput = document.createElement('input');
+    totalInput.type = 'hidden';
+    totalInput.name = 'total_planting_quantity';
+    totalInput.value = totalPlantingQuantity;
+    form.appendChild(totalInput);
+    
+    // Form'u submit et
+    document.getElementById('plantingRequestForm').submit();
+}
+
+// Sayfa yüklendiğinde gerekli event listener'ları ekle
+document.addEventListener('DOMContentLoaded', function() {
+    setupCheckboxListeners();
+    updateBulkButton();
+});
+</script>
+
+{% endblock %} 

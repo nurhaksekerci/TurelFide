@@ -1,0 +1,196 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Sezon Seçimi - Sipariş Yönetimi - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-shopping-cart me-2"></i>Sipariş Yönetimi</h2>
+            <p class="text-muted">Sipariş işlemlerine devam etmek için çalışmak istediğiniz sezonu seçin</p>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ seasons|length }}</h4>
+                            <span>Toplam Sezon</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>
+                                {% for season in seasons %}
+                                    {% if season.order_stats.total_orders %}{{ season.order_stats.total_orders }}{% else %}0{% endif %}
+                                {% empty %}0{% endfor %}
+                            </h4>
+                            <span>Toplam Sipariş</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-shopping-cart fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>
+                                {% for season in seasons %}
+                                    {% if season.order_stats.pending_orders %}{{ season.order_stats.pending_orders }}{% else %}0{% endif %}
+                                {% empty %}0{% endfor %}
+                            </h4>
+                            <span>Bekleyen Sipariş</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>
+                                {% for season in seasons %}
+                                    {% if season.order_stats.overdue_orders %}{{ season.order_stats.overdue_orders }}{% else %}0{% endif %}
+                                {% empty %}0{% endfor %}
+                            </h4>
+                            <span>Geciken Sipariş</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seasons List -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Sezonlar ve Sipariş Durumu
+                </h5>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if seasons %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Sezon Adı</th>
+                            <th>Durum</th>
+                            <th>Toplam Sipariş</th>
+                            <th>Toplam Tutar</th>
+                            <th>Bekleyen</th>
+                            <th>Geciken</th>
+                            <th width="200">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for season in seasons %}
+                        <tr {% if season.is_active %}class="table-success"{% endif %}>
+                            <td>
+                                <strong>{{ season.name }}</strong>
+                                {% if season.is_active %}
+                                    <span class="badge bg-success ms-2">AKTİF</span>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">{{ season.start_date|date:"d.m.Y" }} - {{ season.end_date|date:"d.m.Y" }}</small>
+                            </td>
+                            <td>
+                                {% if season.is_active %}
+                                    <span class="badge bg-success">Aktif</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Pasif</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ season.order_stats.total_orders|default:0 }}</span>
+                            </td>
+                            <td>
+                                <strong class="text-success">
+                                    {% if season.order_stats.total_amount %}
+                                        {{ season.order_stats.total_amount|floatformat:0 }} TL
+                                    {% else %}
+                                        0 TL
+                                    {% endif %}
+                                </strong>
+                            </td>
+                            <td>
+                                {% if season.order_stats.pending_orders > 0 %}
+                                    <span class="badge bg-warning">{{ season.order_stats.pending_orders }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if season.order_stats.overdue_orders > 0 %}
+                                    <span class="badge bg-danger">{{ season.order_stats.overdue_orders }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'orders:order_list' season.id %}" 
+                                       class="btn btn-primary" title="Siparişleri Görüntüle">
+                                        <i class="fas fa-shopping-cart me-1"></i>Siparişler
+                                    </a>
+                                    <a href="{% url 'orders:order_create' season.id %}" 
+                                       class="btn btn-success" title="Yeni Sipariş">
+                                        <i class="fas fa-plus"></i>
+                                    </a>
+                                    <a href="{% url 'orders:season_statistics' season.id %}" 
+                                       class="btn btn-outline-info" title="İstatistikler">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">Henüz sezon bulunamadı</h5>
+                <p class="text-muted">Sipariş verebilmek için önce sezon oluşturmanız gerekiyor.</p>
+                <a href="/admin/seasons/season/add/" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>Yeni Sezon Ekle
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

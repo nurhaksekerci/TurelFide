@@ -1,0 +1,314 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ season.name }} - Sezon Detayı - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>
+                <i class="fas fa-calendar-alt me-2"></i>{{ season.name }}
+                {% if season.is_active %}
+                    <span class="badge bg-success ms-2">AKTİF</span>
+                {% endif %}
+            </h2>
+            <p class="text-muted">{{ season.start_date|date:"d F Y" }} tarihinde başlayan sezon</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{% url 'seasons:season_product_list' season.id %}" class="btn btn-primary">
+                    <i class="fas fa-seedling me-2"></i>Ürünleri Görüntüle
+                </a>
+                <a href="{% url 'seasons:season_product_create' season.id %}" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>Ürün Ekle
+                </a>
+                <a href="{% url 'seasons:season_export' season.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-download me-2"></i>Dışa Aktar
+                </a>
+            </div>
+            <div class="mt-2">
+                <a href="{% url 'seasons:season_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i>Sezon Listesi
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ stats.total_products }}</h4>
+                            <span>Toplam Ürün</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-box fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ stats.total_varieties }}</h4>
+                            <span>Farklı Çeşit</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-spa fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ stats.total_rootstocks }}</h4>
+                            <span>Farklı Anaç</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-tree fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ completeness.completeness_percentage }}%</h4>
+                            <span>Tamamlanma</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-pie fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completeness Status -->
+    {% if completeness.missing_prices_count > 0 or completeness.zero_duration_count > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning">
+                <h6><i class="fas fa-exclamation-triangle me-2"></i>Eksik Veriler</h6>
+                <div class="row">
+                    {% if completeness.missing_prices_count > 0 %}
+                    <div class="col-md-6">
+                        <p class="mb-1">
+                            <strong>{{ completeness.missing_prices_count }}</strong> ürün için fiyat bilgisi eksik
+                        </p>
+                    </div>
+                    {% endif %}
+                    {% if completeness.zero_duration_count > 0 %}
+                    <div class="col-md-6">
+                        <p class="mb-1">
+                            <strong>{{ completeness.zero_duration_count }}</strong> ürün için süre bilgisi eksik
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Production Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-clock me-2"></i>Ortalama Üretim Süreleri</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h3 class="text-primary">{{ stats.avg_single_production_days }}</h3>
+                            <p class="text-muted mb-0">Tek Gövde (Gün)</p>
+                        </div>
+                        <div class="col-6">
+                            <h3 class="text-info">{{ stats.avg_double_production_days }}</h3>
+                            <p class="text-muted mb-0">Çift Gövde (Gün)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-tasks me-2"></i>Hızlı İşlemler</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'seasons:season_product_bulk_create' season.id %}" 
+                           class="btn btn-success">
+                            <i class="fas fa-plus-circle me-2"></i>Toplu Ürün Ekle
+                        </a>
+                        {% if not season.is_active %}
+                        <form method="post" action="{% url 'seasons:season_activate' season.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning w-100" 
+                                    onclick="return confirm('Bu sezonu aktif yapmak istediğinizden emin misiniz?')">
+                                <i class="fas fa-play me-2"></i>Sezonu Aktif Yap
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Products -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Son Eklenen Ürünler
+                </h5>
+                <a href="{% url 'seasons:season_product_list' season.id %}" class="btn btn-sm btn-outline-primary">
+                    Tümünü Görüntüle
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if season_products %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Çeşit</th>
+                            <th>Anaç</th>
+                            <th>Durum</th>
+                            <th>Fiyat Durumu</th>
+                            <th>Güncellenme</th>
+                            <th width="150">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in season_products %}
+                        <tr>
+                            <td>
+                                <strong>{{ product.variety.get_full_name }}</strong>
+                            </td>
+                            <td>
+                                {% if product.rootstock %}
+                                    <span class="badge bg-info">{{ product.rootstock.name }}</span>
+                                {% else %}
+                                    <span class="text-muted">Anaçsız</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if product.is_active %}
+                                    <span class="badge bg-success">Aktif</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Pasif</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% with single_prices=product.price_single_stem_1|add:product.price_single_stem_2|add:product.price_single_stem_3 %}
+                                {% with double_prices=product.price_double_stem_1|add:product.price_double_stem_2|add:product.price_double_stem_3 %}
+                                {% if single_prices > 0 or double_prices > 0 %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>Var
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-times me-1"></i>Yok
+                                    </span>
+                                {% endif %}
+                                {% endwith %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ product.updated_at|date:"d.m.Y H:i" }}</small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'seasons:season_product_edit' season.id product.id %}" 
+                                       class="btn btn-outline-primary" title="Düzenle">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="post" action="{% url 'seasons:season_product_delete' season.id product.id %}" 
+                                          class="d-inline" onsubmit="return confirm('Bu ürünü silmek istediğinizden emin misiniz?')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger" title="Sil">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-seedling fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">Henüz ürün eklenmemiş</h5>
+                <p class="text-muted">Bu sezon için çeşit ve anaç kombinasyonları ekleyin</p>
+                <a href="{% url 'seasons:season_product_create' season.id %}" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>İlk Ürünü Ekleyin
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if season_products.has_other_pages %}
+        <div class="card-footer">
+            <nav aria-label="Sayfa navigasyonu">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if season_products.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ season_products.previous_page_number }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in season_products.paginator.page_range %}
+                        {% if season_products.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > season_products.number|add:-3 and num < season_products.number|add:3 %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if season_products.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ season_products.next_page_number }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

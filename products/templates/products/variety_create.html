@@ -1,0 +1,129 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Yeni Çeşit Ekle - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-plus me-2"></i>Yeni Çeşit Ekle</h2>
+            <p class="text-muted">Bir türe ait yeni çeşit ekleyin</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'products:variety_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Çeşit Listesi
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-spa me-2"></i>Çeşit Bilgileri</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="name" class="form-label">Çeşit Adı *</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       placeholder="Örnek: Starking, Granny Smith, Golden" required>
+                                <div class="form-text">Çeşidin tam adını yazın</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="species" class="form-label">Tür *</label>
+                                <select class="form-select" id="species" name="species" required>
+                                    <option value="">Tür seçin...</option>
+                                    {% for species in species_list %}
+                                    <option value="{{ species.id }}">{{ species.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Bu çeşidin ait olduğu türü seçin</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="seed_brand" class="form-label">Tohum Markası *</label>
+                                <select class="form-select" id="seed_brand" name="seed_brand" required>
+                                    <option value="">Marka seçin...</option>
+                                    {% for brand in brand_list %}
+                                    <option value="{{ brand.id }}" data-price="{{ brand.price_per_packet }}" data-seeds="{{ brand.seeds_per_packet }}">
+                                        {{ brand.name }} ({{ brand.price_per_packet }}₺)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Tohum markasını seçin</div>
+                            </div>
+                        </div>
+
+                        <!-- Seçim Önizlemesi -->
+                        <div class="row" id="preview-section" style="display: none;">
+                            <div class="col-12 mb-3">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle me-2"></i>Seçim Önizlemesi</h6>
+                                    <p class="mb-1"><strong>Tam Ad:</strong> <span id="full-name-preview">-</span></p>
+                                    <p class="mb-1"><strong>Paket Fiyatı:</strong> <span id="price-preview">-</span>₺</p>
+                                    <p class="mb-0"><strong>Tohum/Paket:</strong> <span id="seeds-preview">-</span> adet</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'products:variety_list' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-2"></i>İptal
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Kaydet
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('name');
+    const speciesSelect = document.getElementById('species');
+    const brandSelect = document.getElementById('seed_brand');
+    const previewSection = document.getElementById('preview-section');
+    const fullNamePreview = document.getElementById('full-name-preview');
+    const pricePreview = document.getElementById('price-preview');
+    const seedsPreview = document.getElementById('seeds-preview');
+    
+    // Auto capitalize first letter
+    nameInput.addEventListener('input', function() {
+        this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1);
+        updatePreview();
+    });
+    
+    speciesSelect.addEventListener('change', updatePreview);
+    brandSelect.addEventListener('change', updatePreview);
+    
+    function updatePreview() {
+        const varietyName = nameInput.value.trim();
+        const speciesName = speciesSelect.options[speciesSelect.selectedIndex]?.text || '';
+        const brandOption = brandSelect.options[brandSelect.selectedIndex];
+        
+        if (varietyName && speciesName && brandOption && brandOption.value) {
+            const brandName = brandOption.text;
+            const price = brandOption.dataset.price;
+            const seeds = brandOption.dataset.seeds;
+            
+            fullNamePreview.textContent = `${speciesName} ${varietyName} (${brandOption.text.split(' (')[0]})`;
+            pricePreview.textContent = price;
+            seedsPreview.textContent = seeds;
+            previewSection.style.display = 'block';
+        } else {
+            previewSection.style.display = 'none';
+        }
+    }
+});
+</script>
+{% endblock %} 

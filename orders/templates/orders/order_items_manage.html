@@ -1,0 +1,544 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ order.order_number }} - Kalem Yönetimi - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>
+                <i class="fas fa-list me-2"></i>{{ order.order_number }} - Kalem Yönetimi
+                {% if order.urgent %}
+                    <span class="badge bg-warning text-dark ms-2">ACİL</span>
+                {% endif %}
+            </h2>
+            <p class="text-muted">{{ order.customer.company_name }} - Sipariş Kalemleri</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'orders:order_detail' season.id order.id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Sipariş Detayı
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Existing Items -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-box me-2"></i>Mevcut Kalemler
+                        </h5>
+                        <span class="badge bg-primary">{{ order_items|length }} kalem</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if order_items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Çeşit</th>
+                                    <th>Anaç</th>
+                                    <th>Gövde</th>
+                                    <th>Viol</th>
+                                    <th>Miktar</th>
+                                    <th>Viol Sayısı</th>
+                                    <th>Birim Fiyat</th>
+                                    <th>Toplam</th>
+                                    <th width="100">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order_items %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ item.variety.get_full_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ item.variety.species.name }}</small>
+                                    </td>
+                                    <td>
+                                        {% if item.rootstock %}
+                                            {{ item.rootstock.name }}
+                                        {% else %}
+                                            <span class="text-muted">Anaçsız</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ item.get_stem_type_display }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ item.viol_type }}</span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ item.quantity }}</strong>
+                                    </td>
+                                    <td>
+                                        <strong>{{ item.viol_count }}</strong>
+                                    </td>
+                                    <td>
+                                        {{ item.unit_price|floatformat:2 }} TL
+                                    </td>
+                                    <td>
+                                        <strong class="text-success">{{ item.total_price|floatformat:2 }} TL</strong>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                    title="Düzenle" onclick="editItem({{ item.id }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <form method="post" action="{% url 'orders:order_item_delete' season.id order.id item.id %}" 
+                                                  class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                                        title="Sil" onclick="return confirm('Bu kalemi silmek istediğinizden emin misiniz?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="4">Toplam</th>
+                                    <th>{{ order.total_quantity }} fide</th>
+                                    <th>{{ order.total_viol_count }} viol</th>
+                                    <th colspan="3">
+                                        <strong class="text-success">{{ order.total_amount|floatformat:2 }} TL</strong>
+                                    </th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">Henüz kalem eklenmemiş</h5>
+                        <p class="text-muted">Bu siparişe henüz hiç ürün kalemi eklenmemiş.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Add New Item Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-plus me-2"></i>Yeni Kalem Ekle
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="addItemForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-2 mb-3">
+                                <label for="variety" class="form-label">
+                                    <i class="fas fa-seedling me-1"></i>Ürün <span class="text-danger">*</span>
+                                </label>
+                                <select name="variety" id="variety" class="form-select" required>
+                                    <option value="">Ürün seçin...</option>
+                                    {% regroup varieties by species as species_groups %}
+                                    {% for species_group in species_groups %}
+                                        <optgroup label="{{ species_group.grouper.name }}">
+                                            {% for variety in species_group.list %}
+                                                <option value="{{ variety.id }}" data-species="{{ variety.species.id }}">
+                                                    {{ variety.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </optgroup>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label for="rootstock" class="form-label">
+                                    <i class="fas fa-tree me-1"></i>Anaç
+                                </label>
+                                <select name="rootstock" id="rootstock" class="form-select">
+                                    <option value="">Anaçsız</option>
+                                    {% for rootstock in rootstocks %}
+                                        <option value="{{ rootstock.id }}">{{ rootstock.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label for="species" class="form-label">
+                                    <i class="fas fa-leaf me-1"></i>Türü <span class="text-danger">*</span>
+                                </label>
+                                <select name="species" id="species" class="form-select" required>
+                                    <option value="">Tür seçin...</option>
+                                    {% for species in species_list %}
+                                        <option value="{{ species.id }}">{{ species.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label for="stem_type" class="form-label">
+                                    <i class="fas fa-tree me-1"></i>Gövde <span class="text-danger">*</span>
+                                </label>
+                                <select name="stem_type" id="stem_type" class="form-select" required>
+                                    {% for choice in stem_type_choices %}
+                                        <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label for="viol_type" class="form-label">
+                                    <i class="fas fa-square me-1"></i>Viol Tipi <span class="text-danger">*</span>
+                                </label>
+                                <select name="viol_type" id="viol_type" class="form-select" required>
+                                    {% for choice in viol_type_choices %}
+                                        <option value="{{ choice.0 }}" {% if choice.0 == "128" %}selected{% endif %}>{{ choice.1 }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label for="quantity" class="form-label">
+                                    <i class="fas fa-hashtag me-1"></i>Miktar <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" name="quantity" id="quantity" class="form-control" 
+                                       min="1" max="100000" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="viol_count" class="form-label">
+                                    <i class="fas fa-layer-group me-1"></i>Viol Adedi
+                                </label>
+                                <input type="number" name="viol_count" id="viol_count" class="form-control" 
+                                       readonly placeholder="Otomatik hesaplanacak">
+                                <div class="form-text">Miktar ve viol tipine göre otomatik hesaplanır</div>
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <label for="unit_price" class="form-label">
+                                    <i class="fas fa-lira-sign me-1"></i>Birim Fiyat (TL)
+                                </label>
+                                <input type="number" name="unit_price" id="unit_price" class="form-control" 
+                                       step="0.01" min="0" placeholder="Otomatik hesaplanacak">
+                                <div class="form-text">Boş bırakırsanız teslimat ayına göre hesaplanır</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="notes" class="form-label">
+                                    <i class="fas fa-sticky-note me-1"></i>Kalem Notları
+                                </label>
+                                <textarea name="notes" id="notes" class="form-control" rows="2" 
+                                          placeholder="Bu kalem için özel notlar..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                <i class="fas fa-undo me-1"></i>Temizle
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-plus me-1"></i>Kalem Ekle
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Order Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-shopping-cart me-2"></i>Sipariş Özeti
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-primary">{{ order.total_quantity }}</h4>
+                                <small class="text-muted">Toplam Fide</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-info">{{ order.total_viol_count }}</h4>
+                            <small class="text-muted">Toplam Viol</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="text-center">
+                        <h3 class="text-success">{{ order.total_amount|floatformat:2 }} TL</h3>
+                        <small class="text-muted">Toplam Tutar</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>Hızlı İşlemler
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-primary" onclick="calculatePrices()">
+                            <i class="fas fa-calculator me-1"></i>Fiyatları Hesapla
+                        </button>
+                        <button type="button" class="btn btn-outline-info" onclick="showPriceHelper()">
+                            <i class="fas fa-question-circle me-1"></i>Fiyat Hesaplama Yardımı
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>İpuçları
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-2">
+                        <small>
+                            <i class="fas fa-info-circle me-1"></i>
+                            Viol sayısı miktar ve viol tipine göre otomatik hesaplanır.
+                        </small>
+                    </div>
+                    <div class="alert alert-warning mb-2">
+                        <small>
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            Birim fiyat boş bırakılırsa, teslimat ayına göre otomatik hesaplanır.
+                        </small>
+                    </div>
+                    <div class="alert alert-success mb-0">
+                        <small>
+                            <i class="fas fa-check-circle me-1"></i>
+                            Değişiklikler anında sipariş toplamına yansır.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.getElementById('quantity');
+    const violCountInput = document.getElementById('viol_count');
+    const varietySelect = document.getElementById('variety');
+    const rootstockSelect = document.getElementById('rootstock');
+    const speciesSelect = document.getElementById('species');
+    const stemTypeSelect = document.getElementById('stem_type');
+    const unitPriceInput = document.getElementById('unit_price');
+    const violTypeSelect = document.getElementById('viol_type');
+
+    // Viol tiplerinin kapasiteleri
+    const violCapacities = {
+        '96': 96,
+        '128': 128,
+        '150': 150,
+        '192': 192,
+        '216': 216
+    };
+
+    // Ürün seçilince türü göster
+    varietySelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const speciesId = selectedOption.getAttribute('data-species');
+            speciesSelect.value = speciesId || '';
+            calculateUnitPrice();
+        } else {
+            speciesSelect.value = '';
+        }
+    });
+
+    // Tür seçilince ürünleri filtrele
+    speciesSelect.addEventListener('change', function() {
+        const selectedSpeciesId = this.value;
+        
+        // Variety dropdown'ı temizle
+        varietySelect.innerHTML = '<option value="">Ürün seçin...</option>';
+        
+        if (selectedSpeciesId) {
+            // Seçilen türe ait ürünleri ekle
+            const selectedSpecies = [...varietySelect.getElementsByTagName('optgroup')]
+                .find(optgroup => optgroup.label === this.options[this.selectedIndex].text);
+            
+            // API'den türe ait ürünleri al
+            fetch(`/orders/api/varieties-by-species/${selectedSpeciesId}/?season_id={{ season.id }}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        data.varieties.forEach(variety => {
+                            const option = document.createElement('option');
+                            option.value = variety.id;
+                            option.setAttribute('data-species', variety.species_id);
+                            option.textContent = variety.name;
+                            varietySelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error('Ürün yükleme hatası:', error));
+        } else {
+            // Tüm ürünleri geri yükle
+            location.reload(); // Basit çözüm, daha elegant yapılabilir
+        }
+    });
+
+    // Viol sayısını otomatik hesaplama
+    function calculateViolCount() {
+        const quantity = parseInt(quantityInput.value) || 0;
+        const violType = violTypeSelect.value;
+        
+        if (quantity > 0 && violType && violCapacities[violType]) {
+            const capacity = violCapacities[violType];
+            const violCount = Math.ceil(quantity / capacity);
+            violCountInput.value = violCount;
+            
+            // Viol sayısını hidden input olarak da ekle
+            let hiddenInput = document.getElementById('hidden_viol_count');
+            if (!hiddenInput) {
+                hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'viol_count';
+                hiddenInput.id = 'hidden_viol_count';
+                quantityInput.parentNode.appendChild(hiddenInput);
+            }
+            hiddenInput.value = violCount;
+        } else {
+            violCountInput.value = '';
+            const hiddenInput = document.getElementById('hidden_viol_count');
+            if (hiddenInput) {
+                hiddenInput.value = '';
+            }
+        }
+    }
+
+    // Otomatik fiyat hesaplama
+    function calculateUnitPrice() {
+        const varietyId = varietySelect.value;
+        const rootstockId = rootstockSelect.value || '';
+        const stemType = stemTypeSelect.value;
+        
+        if (varietyId && stemType) {
+            // Variety ve rootstock'tan season_product'u bul
+            fetch(`/orders/api/season-product-by-variety/{{ season.id }}/?variety_id=${varietyId}&rootstock_id=${rootstockId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.season_product_id) {
+                        return fetch(`/orders/api/product-price/${data.season_product_id}/?stem_type=${stemType}&order_id={{ order.id }}`);
+                    }
+                    throw new Error('Season product not found');
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        unitPriceInput.placeholder = `Önerilen: ${data.formatted_price}`;
+                        if (!unitPriceInput.value) {
+                            unitPriceInput.value = data.unit_price.toFixed(2);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.log('Fiyat hesaplama için season product bulunamadı:', error);
+                    unitPriceInput.placeholder = 'Otomatik hesaplanamadı';
+                });
+        }
+    }
+
+    // Event listeners
+    quantityInput.addEventListener('input', function() {
+        calculateViolCount();
+    });
+    violTypeSelect.addEventListener('change', calculateViolCount);
+    rootstockSelect.addEventListener('change', calculateUnitPrice);
+    stemTypeSelect.addEventListener('change', calculateUnitPrice);
+
+    // Form validasyonu
+    const form = document.getElementById('addItemForm');
+    form.addEventListener('submit', function(e) {
+        const species = speciesSelect.value;
+        const variety = varietySelect.value;
+        const quantity = parseInt(quantityInput.value) || 0;
+        const violType = violTypeSelect.value;
+        const violCount = parseInt(violCountInput.value) || 0;
+        
+        if (!species) {
+            alert('Lütfen bir tür seçin.');
+            e.preventDefault();
+            return;
+        }
+        
+        if (!variety) {
+            alert('Lütfen bir ürün seçin.');
+            e.preventDefault();
+            return;
+        }
+        
+        if (quantity <= 0) {
+            alert('Miktar 0\'dan büyük olmalıdır.');
+            e.preventDefault();
+            return;
+        }
+        
+        if (!violType) {
+            alert('Lütfen viol tipi seçin.');
+            e.preventDefault();
+            return;
+        }
+        
+        if (violCount <= 0) {
+            alert('Viol sayısı hesaplanamadı. Lütfen miktar ve viol tipi doğru girdiğinizden emin olun.');
+            e.preventDefault();
+            return;
+        }
+    });
+});
+
+function resetForm() {
+    document.getElementById('addItemForm').reset();
+    document.getElementById('species').value = '';
+    document.getElementById('variety').innerHTML = '<option value="">Ürün seçin...</option>';
+    document.getElementById('viol_count').value = '';
+    document.getElementById('unit_price').placeholder = 'Otomatik hesaplanacak';
+    const hiddenInput = document.getElementById('hidden_viol_count');
+    if (hiddenInput) {
+        hiddenInput.value = '';
+    }
+    
+    // Tüm ürünleri geri yükle
+    location.reload();
+}
+
+function editItem(itemId) {
+    // Bu fonksiyon gelecekte implement edilecek
+    alert('Düzenleme özelliği yakında eklenecek.');
+}
+
+function calculatePrices() {
+    // Tüm kalemlerin fiyatlarını yeniden hesapla
+    alert('Fiyat hesaplama özelliği yakında eklenecek.');
+}
+
+function showPriceHelper() {
+    alert(`Fiyat Hesaplama Bilgisi:
+    
+1. Birim fiyat boş bırakılırsa, teslimat ayına göre otomatik hesaplanır
+2. Teslimat ayı, sipariş tarihi ile üretim süresi toplamından hesaplanır
+3. {{ season.name }} sezonu için 18 aylık fiyat tablosu kullanılır
+4. Tek/çift gövde tipine göre farklı fiyatlar uygulanır`);
+}
+</script>
+{% endblock %} 

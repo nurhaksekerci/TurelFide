@@ -1,0 +1,232 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ season.name }} - Yeni Sipariş - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>
+                <i class="fas fa-plus me-2"></i>Yeni Sipariş Oluştur
+            </h2>
+            <p class="text-muted">{{ season.name }} sezonu için yeni sipariş oluşturun</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'orders:order_list' season.id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Sipariş Listesi
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Order Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>Sipariş Bilgileri
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="customer" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Müşteri <span class="text-danger">*</span>
+                                </label>
+                                <select name="customer" id="customer" class="form-select" required>
+                                    <option value="">Müşteri seçin...</option>
+                                    {% for customer in customers %}
+                                        <option value="{{ customer.id }}">
+                                            {{ customer.first_name }} {{ customer.last_name }}
+                                            {% if customer.contact_person %}
+                                                - {{ customer.contact_person }}
+                                            {% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="requested_delivery_date" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>İstenen Teslimat Tarihi <span class="text-danger">*</span>
+                                </label>
+                                <input type="date" name="requested_delivery_date" id="requested_delivery_date" 
+                                       class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="urgent" id="urgent">
+                                    <label class="form-check-label" for="urgent">
+                                        <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                                        Acil Sipariş
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="special_packaging" id="special_packaging">
+                                    <label class="form-check-label" for="special_packaging">
+                                        <i class="fas fa-box text-info me-1"></i>
+                                        Özel Ambalaj Gerekli
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">
+                                <i class="fas fa-sticky-note me-1"></i>Sipariş Notları
+                            </label>
+                            <textarea name="notes" id="notes" class="form-control" rows="3" 
+                                      placeholder="Sipariş ile ilgili özel notlar..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="internal_notes" class="form-label">
+                                <i class="fas fa-eye-slash me-1"></i>İç Notlar
+                            </label>
+                            <textarea name="internal_notes" id="internal_notes" class="form-control" rows="2" 
+                                      placeholder="Müşteriye gösterilmeyen dahili notlar..."></textarea>
+                            <div class="form-text">Bu notlar sadece iç kullanım içindir ve müşteriye gösterilmez.</div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'orders:order_list' season.id %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>İptal
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-1"></i>Sipariş Oluştur
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Season Info -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>Sezon Bilgileri
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>{{ season.name }}</strong>
+                        {% if season.is_active %}
+                            <span class="badge bg-success ms-2">Aktif</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h6 class="text-muted mb-1">Başlangıç</h6>
+                                <div class="fw-bold">{{ season.start_date|date:"d.m.Y" }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h6 class="text-muted mb-1">Bitiş</h6>
+                            <div class="fw-bold">{{ season.end_date|date:"d.m.Y" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Info -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Bilgilendirme
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-3">
+                        <small>
+                            <i class="fas fa-lightbulb me-1"></i>
+                            Sipariş oluşturduktan sonra ürün kalemlerini ekleyebilirsiniz.
+                        </small>
+                    </div>
+                    
+                    <div class="alert alert-warning mb-0">
+                        <small>
+                            <i class="fas fa-clock me-1"></i>
+                            Teslimat tarihi, üretim sürelerine göre otomatik hesaplanacaktır.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Required Fields -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-asterisk me-2"></i>Zorunlu Alanlar
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-user text-muted me-2"></i>
+                            <strong>Müşteri:</strong> Sipariş veren müşteri
+                        </li>
+                        <li>
+                            <i class="fas fa-calendar text-muted me-2"></i>
+                            <strong>Teslimat Tarihi:</strong> Müşterinin istediği tarih
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Bugünden sonraki tarihleri seç
+    const dateInput = document.getElementById('requested_delivery_date');
+    const today = new Date();
+    today.setDate(today.getDate() + 1); // Yarından başla
+    dateInput.min = today.toISOString().split('T')[0];
+    
+    // Form validasyonu
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const customer = document.getElementById('customer').value;
+        const deliveryDate = document.getElementById('requested_delivery_date').value;
+        
+        if (!customer) {
+            alert('Lütfen bir müşteri seçin.');
+            e.preventDefault();
+            return;
+        }
+        
+        if (!deliveryDate) {
+            alert('Lütfen teslimat tarihi seçin.');
+            e.preventDefault();
+            return;
+        }
+        
+        // Seçilen tarih bugünden sonra mı kontrol et
+        const selectedDate = new Date(deliveryDate);
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        if (selectedDate <= tomorrow) {
+            alert('Teslimat tarihi yarından sonra olmalıdır.');
+            e.preventDefault();
+            return;
+        }
+    });
+});
+</script>
+{% endblock %} 

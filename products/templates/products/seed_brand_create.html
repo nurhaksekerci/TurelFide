@@ -1,0 +1,110 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Yeni Tohum Markası Ekle - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-plus me-2"></i>Yeni Tohum Markası Ekle</h2>
+            <p class="text-muted">Yeni bir tohum markası ve fiyat bilgilerini ekleyin</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'products:seed_brand_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Marka Listesi
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-tag me-2"></i>Tohum Markası Bilgileri</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="name" class="form-label">Marka Adı *</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       placeholder="Örnek: Kurumsal, Türkiye, İtalya, Almanya" required>
+                                <div class="form-text">Tohum markasının tam adını yazın</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="price_per_packet" class="form-label">Paket Fiyatı (₺) *</label>
+                                <input type="number" class="form-control" id="price_per_packet" name="price_per_packet" 
+                                       step="0.01" min="0" placeholder="0.00" required>
+                                <div class="form-text">Bir paket tohumun fiyatı</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="seeds_per_packet" class="form-label">Paket Başına Tohum Sayısı *</label>
+                                <input type="number" class="form-control" id="seeds_per_packet" name="seeds_per_packet" 
+                                       min="1" placeholder="0" required>
+                                <div class="form-text">Bir pakette kaç adet tohum var</div>
+                            </div>
+                        </div>
+
+                        <!-- Hesaplama Önizlemesi -->
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-calculator me-2"></i>Hesaplama Önizlemesi</h6>
+                                    <p class="mb-0">
+                                        <strong>Tohum başına fiyat:</strong> 
+                                        <span id="price-preview">-</span>₺
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'products:seed_brand_list' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-2"></i>İptal
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Kaydet
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('name');
+    const priceInput = document.getElementById('price_per_packet');
+    const seedsInput = document.getElementById('seeds_per_packet');
+    const pricePreview = document.getElementById('price-preview');
+    
+    // Auto capitalize first letter
+    nameInput.addEventListener('input', function() {
+        this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1);
+    });
+    
+    // Calculate price per seed
+    function updatePricePreview() {
+        const price = parseFloat(priceInput.value) || 0;
+        const seeds = parseInt(seedsInput.value) || 0;
+        
+        if (price > 0 && seeds > 0) {
+            const pricePerSeed = (price / seeds).toFixed(4);
+            pricePreview.textContent = pricePerSeed;
+        } else {
+            pricePreview.textContent = '-';
+        }
+    }
+    
+    priceInput.addEventListener('input', updatePricePreview);
+    seedsInput.addEventListener('input', updatePricePreview);
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,367 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Tür Listesi - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-leaf me-2"></i>Tür Yönetimi</h2>
+            <p class="text-muted">Domates, Biber, Patlıcan vb. türleri yönetin</p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if can_edit %}
+            <a href="{% url 'products:species_create' %}" class="btn btn-success">
+                <i class="fas fa-plus me-2"></i>Yeni Tür Ekle
+            </a>
+            {% endif %}
+            <a href="{% url 'products:dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Tür Ara</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search_query }}" placeholder="Tür adını yazın...">
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Durum</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Tümü</option>
+                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Aktif</option>
+                        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Pasif</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-2"></i>Ara
+                    </button>
+                    <a href="{% url 'products:species_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-2"></i>Temizle
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    {% if can_edit %}
+    <div class="card mb-3" id="bulk-actions" style="display: none;">
+        <div class="card-body bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <span id="selected-count">0 tür seçildi</span>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-success btn-sm" onclick="bulkAction('activate')">
+                        <i class="fas fa-check me-1"></i>Aktifleştir
+                    </button>
+                    <button type="button" class="btn btn-warning btn-sm" onclick="bulkAction('deactivate')">
+                        <i class="fas fa-times me-1"></i>Pasifleştir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Results -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Türler 
+                    <span class="badge bg-primary">{{ total_count }}</span>
+                </h5>
+                {% if can_edit %}
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="select-all">
+                    <label class="form-check-label" for="select-all">
+                        Tümünü Seç
+                    </label>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if species_list %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            {% if can_edit %}
+                            <th width="50">
+                                <input type="checkbox" id="select-all-header" class="form-check-input">
+                            </th>
+                            {% endif %}
+                            <th>Tür Adı</th>
+                            <th>Aktif Çeşitler</th>
+                            <th>Aktif Anaçlar</th>
+                            <th>Durum</th>
+                            <th>Oluşturulma</th>
+                            <th width="150">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for species in species_list %}
+                        <tr>
+                            {% if can_edit %}
+                            <td>
+                                <input type="checkbox" class="form-check-input species-checkbox" 
+                                       value="{{ species.id }}">
+                            </td>
+                            {% endif %}
+                            <td>
+                                <a href="{% url 'products:species_detail' species.id %}" class="text-decoration-none">
+                                    <strong>{{ species.name }}</strong>
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">{{ species.active_varieties_count }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ species.active_rootstocks_count }}</span>
+                            </td>
+                            <td>
+                                {% if species.is_active %}
+                                    <span class="badge bg-success">Aktif</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Pasif</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ species.created_at|date:"d.m.Y H:i" }}</small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'products:species_detail' species.id %}" 
+                                       class="btn btn-outline-primary" title="Detaylar">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if can_edit %}
+                                    <a href="{% url 'products:species_edit' species.id %}" 
+                                       class="btn btn-outline-secondary" title="Düzenle">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-warning" 
+                                            onclick="toggleStatus('species', {{ species.id }})" 
+                                            title="{% if species.is_active %}Pasifleştir{% else %}Aktifleştir{% endif %}">
+                                        {% if species.is_active %}
+                                            <i class="fas fa-pause"></i>
+                                        {% else %}
+                                            <i class="fas fa-play"></i>
+                                        {% endif %}
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-leaf fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">Hiç tür bulunamadı</h5>
+                <p class="text-muted">
+                    {% if search_query or status_filter %}
+                        Arama kriterlerinizi değiştirin veya filtreleri temizleyin.
+                    {% else %}
+                        Henüz hiç tür eklenmemiş.
+                    {% endif %}
+                </p>
+                {% if can_edit %}
+                <a href="{% url 'products:species_create' %}" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>İlk Türü Ekleyin
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="card-footer">
+            <nav aria-label="Sayfa navigasyonu">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page_obj.next_page_number }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Checkbox selection
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAll = document.getElementById('select-all');
+    const selectAllHeader = document.getElementById('select-all-header');
+    const checkboxes = document.querySelectorAll('.species-checkbox');
+    const bulkActions = document.getElementById('bulk-actions');
+    const selectedCount = document.getElementById('selected-count');
+
+    // Select all functionality
+    [selectAll, selectAllHeader].forEach(checkbox => {
+        if (checkbox) {
+            checkbox.addEventListener('change', function() {
+                checkboxes.forEach(cb => cb.checked = this.checked);
+                updateBulkActions();
+                // Sync both select all checkboxes
+                [selectAll, selectAllHeader].forEach(cb => {
+                    if (cb !== this) cb.checked = this.checked;
+                });
+            });
+        }
+    });
+
+    // Individual checkbox change
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkActions);
+    });
+
+    function updateBulkActions() {
+        const selected = document.querySelectorAll('.species-checkbox:checked');
+        const count = selected.length;
+        
+        if (count > 0) {
+            bulkActions.style.display = 'block';
+            selectedCount.textContent = `${count} tür seçildi`;
+        } else {
+            bulkActions.style.display = 'none';
+        }
+
+        // Update select all checkbox state
+        const allSelected = count === checkboxes.length;
+        const someSelected = count > 0;
+        
+        [selectAll, selectAllHeader].forEach(checkbox => {
+            if (checkbox) {
+                checkbox.checked = allSelected;
+                checkbox.indeterminate = someSelected && !allSelected;
+            }
+        });
+    }
+});
+
+// Toggle status
+function toggleStatus(modelType, objectId) {
+    fetch(`/products/ajax/toggle-status/${modelType}/${objectId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showToast(data.message, 'success');
+            // Reload page to reflect changes
+            window.location.reload();
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Bir hata oluştu: ' + error.message, 'error');
+    });
+}
+
+// Bulk actions
+function bulkAction(action) {
+    const selected = Array.from(document.querySelectorAll('.species-checkbox:checked'))
+                          .map(cb => parseInt(cb.value));
+    
+    if (selected.length === 0) {
+        showToast('Lütfen en az bir tür seçin', 'warning');
+        return;
+    }
+
+    const actionText = action === 'activate' ? 'aktifleştirmek' : 'pasifleştirmek';
+    if (!confirm(`Seçili ${selected.length} türü ${actionText} istediğinizden emin misiniz?`)) {
+        return;
+    }
+
+    fetch('/products/ajax/bulk-toggle/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            model_type: 'species',
+            object_ids: selected,
+            action: action
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            window.location.reload();
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Bir hata oluştu: ' + error.message, 'error');
+    });
+}
+
+// Toast notification
+function showToast(message, type) {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'warning'} alert-dismissible fade show position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, 5000);
+}
+</script>
+
+{% csrf_token %}
+{% endblock %} 

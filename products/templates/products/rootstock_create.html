@@ -1,0 +1,129 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Yeni Anaç Ekle - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-plus me-2"></i>Yeni Anaç Ekle</h2>
+            <p class="text-muted">Aşılama için kullanılacak yeni bir anaç ekleyin</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'products:rootstock_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Anaç Listesi
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-tree me-2"></i>Anaç Bilgileri</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Anaç Adı *</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       placeholder="Örnek: M9, M26, MM106" required>
+                                <div class="form-text">Anacın tam adını yazın</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="species" class="form-label">Tür *</label>
+                                <select class="form-select" id="species" name="species" required>
+                                    <option value="">Tür seçin...</option>
+                                    {% for species in species_list %}
+                                    <option value="{{ species.id }}">{{ species.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Bu anacın ait olduğu türü seçin</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="vigor_level" class="form-label">Vigör Seviyesi</label>
+                                <select class="form-select" id="vigor_level" name="vigor_level">
+                                    <option value="">Vigör seviyesi seçin...</option>
+                                    {% for choice in vigor_choices %}
+                                    <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Anacın büyüme gücünü seçin (opsiyonel)</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="description" class="form-label">Açıklama</label>
+                                <textarea class="form-control" id="description" name="description" rows="3" 
+                                          placeholder="Anaç hakkında detaylı bilgiler (opsiyonel)"></textarea>
+                                <div class="form-text">Anacın özelliklerini, kullanım alanlarını açıklayın</div>
+                            </div>
+                        </div>
+
+                        <!-- Seçim Önizlemesi -->
+                        <div class="row" id="preview-section" style="display: none;">
+                            <div class="col-12 mb-3">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle me-2"></i>Seçim Önizlemesi</h6>
+                                    <p class="mb-1"><strong>Tam Ad:</strong> <span id="full-name-preview">-</span></p>
+                                    <p class="mb-0"><strong>Vigör Seviyesi:</strong> <span id="vigor-preview">-</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'products:rootstock_list' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-2"></i>İptal
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Kaydet
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('name');
+    const speciesSelect = document.getElementById('species');
+    const vigorSelect = document.getElementById('vigor_level');
+    const previewSection = document.getElementById('preview-section');
+    const fullNamePreview = document.getElementById('full-name-preview');
+    const vigorPreview = document.getElementById('vigor-preview');
+    
+    // Auto capitalize first letter
+    nameInput.addEventListener('input', function() {
+        this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1);
+        updatePreview();
+    });
+    
+    speciesSelect.addEventListener('change', updatePreview);
+    vigorSelect.addEventListener('change', updatePreview);
+    
+    function updatePreview() {
+        const rootstockName = nameInput.value.trim();
+        const speciesName = speciesSelect.options[speciesSelect.selectedIndex]?.text || '';
+        const vigorName = vigorSelect.options[vigorSelect.selectedIndex]?.text || 'Belirtilmedi';
+        
+        if (rootstockName && speciesName) {
+            fullNamePreview.textContent = `${speciesName} ${rootstockName}`;
+            vigorPreview.textContent = vigorName;
+            previewSection.style.display = 'block';
+        } else {
+            previewSection.style.display = 'none';
+        }
+    }
+});
+</script>
+{% endblock %} 

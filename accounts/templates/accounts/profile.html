@@ -1,0 +1,371 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Profil - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-user-edit me-2"></i>Profil Bilgilerim</h2>
+                    <p class="text-muted">Kişisel bilgilerinizi güncelleyin</p>
+                </div>
+                <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Dashboard'a Dön
+                </a>
+            </div>
+
+            <div class="row">
+                <!-- Profile Info Card -->
+                <div class="col-md-4 mb-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="avatar-circle-large mx-auto mb-3">
+                                <i class="fas fa-user fa-3x"></i>
+                            </div>
+                            <h5 class="card-title">{{ user.get_full_name|default:user.username }}</h5>
+                            <p class="card-text">
+                                <span class="badge role-badge {% if user.role == 'admin' %}bg-admin{% elif user.role == 'readonly' %}bg-readonly{% elif 'manager' in user.role %}bg-manager{% elif 'personel' in user.role %}bg-personel{% else %}bg-other{% endif %}">
+                                    {{ user_info.role_display }}
+                                </span>
+                            </p>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>
+                                Kayıt: {{ user.date_joined|date:"d.m.Y" }}
+                            </small>
+                            {% if user.last_login %}
+                            <br>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                Son giriş: {{ user.last_login|date:"d.m.Y H:i" }}
+                            </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Account Info -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-info-circle me-2"></i>Hesap Bilgileri
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <strong>Kullanıcı Adı:</strong><br>
+                                <span class="text-muted">@{{ user.username }}</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>PIN Kodu:</strong><br>
+                                <span class="text-muted">
+                                    <i class="fas fa-key me-1"></i>
+                                    <span id="pinDisplay">****</span>
+                                    {% if user.is_superuser or user.is_staff %}
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-secondary ms-2" 
+                                            id="togglePinBtn"
+                                            title="PIN Kodunu Göster/Gizle">
+                                        <i class="fas fa-eye" id="pinIcon"></i>
+                                    </button>
+                                    {% endif %}
+                                    <br>
+                                    {% if user.role == 'admin' %}
+                                    <small>(Yönetici tarafından sıfırlanabilir)</small>
+                                    {% else %}
+                                    <small>(Yöneticinize başvurun)</small>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div>
+                                <strong>Durum:</strong><br>
+                                {% if user.is_active %}
+                                <span class="badge bg-success">Aktif</span>
+                                {% else %}
+                                <span class="badge bg-danger">Pasif</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Form -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-edit me-2"></i>Bilgileri Düzenle
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" id="profileForm">
+                                {% csrf_token %}
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="first_name" class="form-label">Ad <span class="text-danger">*</span></label>
+                                            <input type="text" 
+                                                   class="form-control" 
+                                                   id="first_name" 
+                                                   name="first_name" 
+                                                   value="{{ user.first_name }}"
+                                                   required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="last_name" class="form-label">Soyad <span class="text-danger">*</span></label>
+                                            <input type="text" 
+                                                   class="form-control" 
+                                                   id="last_name" 
+                                                   name="last_name" 
+                                                   value="{{ user.last_name }}"
+                                                   required>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="phone_number" class="form-label">Telefon <span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">+90</span>
+                                                <input type="tel" 
+                                                       class="form-control" 
+                                                       id="phone_number" 
+                                                       name="phone_number" 
+                                                       value="{{ user.phone_number }}"
+                                                       placeholder="5XX XXX XX XX"
+                                                       pattern="5[0-9]{9}"
+                                                       maxlength="10"
+                                                       required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="email" class="form-label">E-posta</label>
+                                            <input type="email" 
+                                                   class="form-control" 
+                                                   id="email" 
+                                                   name="email" 
+                                                   value="{{ user.email|default:'' }}">
+                                            <div class="form-text">İsteğe bağlı</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Read-only fields -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Kullanıcı Adı</label>
+                                            <input type="text" 
+                                                   class="form-control" 
+                                                   value="{{ user.username }}"
+                                                   readonly>
+                                            <div class="form-text">Kullanıcı adı değiştirilemez</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Rol</label>
+                                            <input type="text" 
+                                                   class="form-control" 
+                                                   value="{{ user_info.role_display }}"
+                                                   readonly>
+                                            <div class="form-text">Rol değişikliği için yöneticinize başvurun</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <hr>
+                                
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>İptal
+                                    </a>
+                                    <button type="submit" class="btn btn-primary" id="saveBtn">
+                                        <span class="btn-text">
+                                            <i class="fas fa-save me-2"></i>Değişiklikleri Kaydet
+                                        </span>
+                                        <span class="loading">
+                                            <i class="fas fa-spinner fa-spin me-2"></i>Kaydediliyor...
+                                        </span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Security Info -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-shield-alt me-2"></i>Güvenlik
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-info-circle me-2"></i>PIN Güvenliği</h6>
+                                <ul class="mb-0">
+                                    <li>PIN kodunuzu kimseyle paylaşmayın</li>
+                                    <li>Şüpheli aktivite fark ederseniz yöneticinizi bilgilendirin</li>
+                                    <li>PIN sıfırlama için yöneticinize başvurun</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-circle-large {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.form-control[readonly] {
+    background-color: #f8f9fa;
+    opacity: 1;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    const form = $('#profileForm');
+    const saveBtn = $('#saveBtn');
+    const phoneInput = $('#phone_number');
+    
+    let pinVisible = false;
+    let actualPin = null;
+    
+    // PIN görüntüleme toggle
+    $('#togglePinBtn').on('click', function() {
+        const btn = $(this);
+        const pinDisplay = $('#pinDisplay');
+        const pinIcon = $('#pinIcon');
+        
+        if (!pinVisible) {
+            // PIN'i göster
+            if (actualPin === null) {
+                // İlk kez gösteriliyor, AJAX ile kendi PIN'ini al
+                setButtonLoading(btn, true);
+                
+                $.ajax({
+                    url: '{% url "accounts:ajax_get_own_pin" %}',
+                    method: 'GET',
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            actualPin = response.pin_code;
+                            pinDisplay.text(actualPin);
+                            pinIcon.removeClass('fa-eye').addClass('fa-eye-slash');
+                            btn.attr('title', 'PIN Kodunu Gizle');
+                            pinVisible = true;
+                            
+                            showNotification('PIN kodu görüntülendi', 'info');
+                        } else {
+                            showNotification(response.message, 'error');
+                        }
+                    },
+                    error: function() {
+                        showNotification('PIN kodu alınırken hata oluştu', 'error');
+                    },
+                    complete: function() {
+                        setButtonLoading(btn, false);
+                    }
+                });
+            } else {
+                // Zaten alınmış, sadece göster
+                pinDisplay.text(actualPin);
+                pinIcon.removeClass('fa-eye').addClass('fa-eye-slash');
+                btn.attr('title', 'PIN Kodunu Gizle');
+                pinVisible = true;
+            }
+        } else {
+            // PIN'i gizle
+            pinDisplay.text('****');
+            pinIcon.removeClass('fa-eye-slash').addClass('fa-eye');
+            btn.attr('title', 'PIN Kodunu Göster');
+            pinVisible = false;
+        }
+    });
+    
+    // Phone number formatting
+    phoneInput.on('input', function() {
+        let value = $(this).val().replace(/\D/g, '');
+        if (value.length > 10) {
+            value = value.substring(0, 10);
+        }
+        $(this).val(value);
+        
+        // Validation feedback
+        if (value.length === 10 && value.startsWith('5')) {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        } else if (value.length > 0) {
+            $(this).removeClass('is-valid').addClass('is-invalid');
+        } else {
+            $(this).removeClass('is-valid is-invalid');
+        }
+    });
+    
+    // Form submission
+    form.on('submit', function(e) {
+        e.preventDefault();
+        
+        // Basic validation
+        const requiredFields = ['first_name', 'last_name', 'phone_number'];
+        let hasErrors = false;
+        
+        requiredFields.forEach(field => {
+            const input = $(`#${field}`);
+            if (!input.val().trim()) {
+                input.addClass('is-invalid');
+                hasErrors = true;
+            } else {
+                input.removeClass('is-invalid');
+            }
+        });
+        
+        // Phone validation
+        const phoneValue = phoneInput.val();
+        if (phoneValue.length !== 10 || !phoneValue.startsWith('5')) {
+            phoneInput.addClass('is-invalid');
+            hasErrors = true;
+        }
+        
+        if (hasErrors) {
+            showNotification('Lütfen tüm gerekli alanları doğru şekilde doldurun', 'error');
+            return;
+        }
+        
+        setButtonLoading(saveBtn, true);
+        
+        // Submit form normally (Django will handle it)
+        this.submit();
+    });
+    
+    // Initial phone validation
+    phoneInput.trigger('input');
+});
+</script>
+{% endblock %} 

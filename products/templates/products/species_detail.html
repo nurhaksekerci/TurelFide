@@ -1,0 +1,191 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ species.name }} - Tür Detayı - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-leaf me-2"></i>{{ species.name }}</h2>
+            <p class="text-muted">Tür detayları ve bağlı çeşitler/anaçlar</p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if can_edit %}
+            <a href="{% url 'products:species_edit' species.id %}" class="btn btn-primary">
+                <i class="fas fa-edit me-2"></i>Düzenle
+            </a>
+            {% endif %}
+            <a href="{% url 'products:species_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Tür Listesi
+            </a>
+        </div>
+    </div>
+
+    <!-- Species Info -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle me-2"></i>Temel Bilgiler</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Tür Adı:</dt>
+                        <dd class="col-sm-8">{{ species.name }}</dd>
+                        
+                        <dt class="col-sm-4">Durum:</dt>
+                        <dd class="col-sm-8">
+                            {% if species.is_active %}
+                                <span class="badge bg-success">Aktif</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Pasif</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-4">Oluşturulma:</dt>
+                        <dd class="col-sm-8">{{ species.created_at|date:"d.m.Y H:i" }}</dd>
+                        
+                        <dt class="col-sm-4">Son Güncelleme:</dt>
+                        <dd class="col-sm-8">{{ species.updated_at|date:"d.m.Y H:i" }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-pie me-2"></i>İstatistikler</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h3 class="text-success">{{ species.active_varieties_count }}</h3>
+                            <span class="text-muted">Aktif Çeşit</span>
+                        </div>
+                        <div class="col-6">
+                            <h3 class="text-info">{{ species.active_rootstocks_count }}</h3>
+                            <span class="text-muted">Aktif Anaç</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Varieties -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-spa me-2"></i>Çeşitler</h5>
+                    <a href="{% url 'products:variety_list' %}?species={{ species.id }}" class="btn btn-outline-primary btn-sm">
+                        Tümünü Görüntüle
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if varieties %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Çeşit Adı</th>
+                                    <th>Tohum Markası</th>
+                                    <th>Paket Fiyatı</th>
+                                    <th>Durum</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for variety in varieties %}
+                                <tr>
+                                    <td><strong>{{ variety.name }}</strong></td>
+                                    <td>{{ variety.seed_brand.name }}</td>
+                                    <td>{{ variety.seed_brand.price_per_packet }}₺</td>
+                                    <td>
+                                        {% if variety.is_active %}
+                                            <span class="badge bg-success">Aktif</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Pasif</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-spa fa-3x mb-2"></i>
+                        <p>Bu türde henüz çeşit bulunmuyor.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rootstocks -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-tree me-2"></i>Anaçlar</h5>
+                    <a href="{% url 'products:rootstock_list' %}?species={{ species.id }}" class="btn btn-outline-primary btn-sm">
+                        Tümünü Görüntüle
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if rootstocks %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Anaç Adı</th>
+                                    <th>Vigör Seviyesi</th>
+                                    <th>Açıklama</th>
+                                    <th>Durum</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rootstock in rootstocks %}
+                                <tr>
+                                    <td><strong>{{ rootstock.name }}</strong></td>
+                                    <td>
+                                        {% if rootstock.vigor_level %}
+                                            {{ rootstock.get_vigor_level_display }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if rootstock.description %}
+                                            {{ rootstock.description|truncatechars:50 }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if rootstock.is_active %}
+                                            <span class="badge bg-success">Aktif</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Pasif</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-tree fa-3x mb-2"></i>
+                        <p>Bu türde henüz anaç bulunmuyor.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

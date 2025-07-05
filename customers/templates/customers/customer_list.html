@@ -1,0 +1,492 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Müşteriler - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2><i class="fas fa-users me-2"></i>Müşteri Yönetimi</h2>
+            <p class="text-muted">Toplam {{ total_count }} müşteri</p>
+        </div>
+        <div class="col-md-6 text-end">
+            {% if can_edit %}
+            <a href="{% url 'customers:create' %}" class="btn btn-primary">
+                <i class="fas fa-user-plus me-2"></i>Yeni Müşteri
+            </a>
+            <a href="{% url 'customers:stats' %}" class="btn btn-outline-info">
+                <i class="fas fa-chart-bar me-2"></i>İstatistikler
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" id="searchForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Arama</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="search" 
+                                name="search" 
+                                value="{{ search_query }}"
+                                placeholder="Ad, soyad, telefon veya adres..."
+                            >
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="color" class="form-label">Sınıf</label>
+                        <select class="form-select" id="color" name="color">
+                            <option value="">Tüm Sınıflar</option>
+                            {% for color_code, color_name in color_choices %}
+                            <option value="{{ color_code }}" {% if color_filter == color_code %}selected{% endif %}>
+                                {{ color_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="city" class="form-label">Şehir</label>
+                        <select class="form-select" id="city" name="city">
+                            <option value="">Tüm Şehirler</option>
+                            {% for city_data in cities %}
+                            <option value="{{ city_data.city }}" {% if city_filter == city_data.city %}selected{% endif %}>
+                                {{ city_data.city }} ({{ city_data.count }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="status" class="form-label">Durum</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Tüm Durumlar</option>
+                            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Aktif</option>
+                            <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Pasif</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-search me-1"></i>Ara
+                        </button>
+                        <a href="{% url 'customers:list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    {% if can_edit %}
+    <div class="card mb-4" id="bulkActionsCard" style="display: none;">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <span id="selectedCount">0</span> müşteri seçildi
+                </div>
+                <div class="col-md-6 text-end">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-success btn-sm" id="bulkActivateBtn">
+                            <i class="fas fa-check me-1"></i>Aktifleştir
+                        </button>
+                        <button type="button" class="btn btn-warning btn-sm" id="bulkDeactivateBtn">
+                            <i class="fas fa-pause me-1"></i>Pasifleştir
+                        </button>
+                        <button type="button" class="btn btn-info btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-palette me-1"></i>Renk Değiştir
+                        </button>
+                        <ul class="dropdown-menu">
+                            {% for color_code, color_name in color_choices %}
+                            <li>
+                                <a class="dropdown-item bulk-color-btn" href="#" data-color="{{ color_code }}">
+                                    <span class="color-indicator" style="background-color: {{ color_code }};"></span>
+                                    {{ color_name }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Customers Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list me-2"></i>Müşteri Listesi
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            {% if customers %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            {% if can_edit %}
+                            <th width="40">
+                                <input type="checkbox" id="selectAll" class="form-check-input">
+                            </th>
+                            {% endif %}
+                            <th>Müşteri</th>
+                            <th>Telefon</th>
+                            <th>Adres</th>
+                            <th>Sınıf</th>
+                            <th>Durum</th>
+                            <th>Kayıt Tarihi</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers %}
+                        <tr>
+                            {% if can_edit %}
+                            <td>
+                                <input type="checkbox" class="form-check-input customer-checkbox" value="{{ customer.id }}">
+                            </td>
+                            {% endif %}
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-3" style="background-color: {{ customer.color }};">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ customer.get_full_name }}</h6>
+                                        <small class="text-muted">{{ customer.age_in_system }} gün önce kayıt</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <i class="fas fa-phone me-1"></i>{{ customer.formatted_phone }}
+                            </td>
+                            <td>
+                                <div>
+                                    <strong>{{ customer.get_short_address }}</strong><br>
+                                    <small class="text-muted">{{ customer.neighborhood }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge" style="background-color: {{ customer.color }}; color: white;">
+                                    {{ customer.color_category }} Sınıfı
+                                </span>
+                            </td>
+                            <td>
+                                {% if customer.is_active %}
+                                <span class="badge bg-success">Aktif</span>
+                                {% else %}
+                                <span class="badge bg-danger">Pasif</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ customer.created_at|date:"d.m.Y" }}</small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'customers:detail' customer.id %}" 
+                                       class="btn btn-outline-primary" 
+                                       title="Detay">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    {% if can_edit %}
+                                    <a href="{% url 'customers:edit' customer.id %}" 
+                                       class="btn btn-outline-warning"
+                                       title="Düzenle">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    <button type="button" 
+                                            class="btn btn-outline-info toggle-status-btn" 
+                                            data-customer-id="{{ customer.id }}"
+                                            data-current-status="{{ customer.is_active|yesno:'true,false' }}"
+                                            title="{% if customer.is_active %}Pasifleştir{% else %}Aktifleştir{% endif %}">
+                                        <i class="fas fa-{% if customer.is_active %}pause{% else %}play{% endif %}"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Müşteri bulunamadı</h5>
+                <p class="text-muted">Arama kriterlerinizi değiştirip tekrar deneyin.</p>
+                {% if can_edit %}
+                <a href="{% url 'customers:create' %}" class="btn btn-primary">
+                    <i class="fas fa-user-plus me-2"></i>İlk Müşteriyi Ekle
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Sayfalama" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if color_filter %}&color={{ color_filter }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                    <i class="fas fa-angle-double-left"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if color_filter %}&color={{ color_filter }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                    <i class="fas fa-angle-left"></i>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if color_filter %}&color={{ color_filter }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ num }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if color_filter %}&color={{ color_filter }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                    <i class="fas fa-angle-right"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if color_filter %}&color={{ color_filter }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                    <i class="fas fa-angle-double-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.color-indicator {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let selectedCustomers = [];
+    
+    // Select all checkbox
+    $('#selectAll').on('change', function() {
+        const isChecked = $(this).is(':checked');
+        $('.customer-checkbox').prop('checked', isChecked);
+        updateSelectedCustomers();
+    });
+    
+    // Individual checkboxes
+    $('.customer-checkbox').on('change', function() {
+        updateSelectedCustomers();
+        
+        // Update select all checkbox
+        const totalCheckboxes = $('.customer-checkbox').length;
+        const checkedCheckboxes = $('.customer-checkbox:checked').length;
+        $('#selectAll').prop('indeterminate', checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes);
+        $('#selectAll').prop('checked', checkedCheckboxes === totalCheckboxes);
+    });
+    
+    function updateSelectedCustomers() {
+        selectedCustomers = [];
+        $('.customer-checkbox:checked').each(function() {
+            selectedCustomers.push($(this).val());
+        });
+        
+        $('#selectedCount').text(selectedCustomers.length);
+        
+        if (selectedCustomers.length > 0) {
+            $('#bulkActionsCard').show();
+        } else {
+            $('#bulkActionsCard').hide();
+        }
+    }
+    
+    // Bulk actions
+    $('#bulkActivateBtn').on('click', function() {
+        if (selectedCustomers.length === 0) return;
+        
+        if (!confirm(`${selectedCustomers.length} müşteriyi aktifleştirmek istediğinizden emin misiniz?`)) {
+            return;
+        }
+        
+        bulkToggleStatus('activate');
+    });
+    
+    $('#bulkDeactivateBtn').on('click', function() {
+        if (selectedCustomers.length === 0) return;
+        
+        if (!confirm(`${selectedCustomers.length} müşteriyi pasifleştirmek istediğinizden emin misiniz?`)) {
+            return;
+        }
+        
+        bulkToggleStatus('deactivate');
+    });
+    
+    $('.bulk-color-btn').on('click', function(e) {
+        e.preventDefault();
+        
+        if (selectedCustomers.length === 0) return;
+        
+        const color = $(this).data('color');
+        const colorName = $(this).text().trim();
+        
+        if (!confirm(`${selectedCustomers.length} müşterinin sınıfını "${colorName}" olarak değiştirmek istediğinizden emin misiniz?`)) {
+            return;
+        }
+        
+        bulkUpdateColor(color);
+    });
+    
+    function bulkToggleStatus(action) {
+        $.ajax({
+            url: '{% url "customers:ajax_bulk_toggle_status" %}',
+            method: 'POST',
+            data: JSON.stringify({
+                customer_ids: selectedCustomers,
+                action: action
+            }),
+            contentType: 'application/json',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    location.reload();
+                } else {
+                    showNotification(response.message, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Bir hata oluştu', 'error');
+            }
+        });
+    }
+    
+    function bulkUpdateColor(color) {
+        $.ajax({
+            url: '{% url "customers:ajax_bulk_update_color" %}',
+            method: 'POST',
+            data: JSON.stringify({
+                customer_ids: selectedCustomers,
+                color: color
+            }),
+            contentType: 'application/json',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    location.reload();
+                } else {
+                    showNotification(response.message, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Bir hata oluştu', 'error');
+            }
+        });
+    }
+    
+    // Toggle customer status
+    $('.toggle-status-btn').on('click', function() {
+        const btn = $(this);
+        const customerId = btn.data('customer-id');
+        const currentStatus = btn.data('current-status') === 'true';
+        const action = currentStatus ? 'pasifleştir' : 'aktifleştir';
+        
+        if (!confirm(`Bu müşteriyi ${action}mek istediğinizden emin misiniz?`)) {
+            return;
+        }
+        
+        setButtonLoading(btn, true);
+        
+        $.ajax({
+            url: `{% url 'customers:ajax_toggle_status' 0 %}`.replace('0', customerId),
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    location.reload();
+                } else {
+                    showNotification(response.message, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Bir hata oluştu', 'error');
+            },
+            complete: function() {
+                setButtonLoading(btn, false);
+            }
+        });
+    });
+    
+    // Auto-submit search form on input change with debounce
+    let searchTimeout;
+    $('#search').on('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            $('#searchForm').submit();
+        }, 500);
+    });
+    
+    $('#color, #city, #status').on('change', function() {
+        $('#searchForm').submit();
+    });
+});
+</script>
+{% endblock %} 

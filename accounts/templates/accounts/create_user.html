@@ -1,0 +1,262 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Yeni Kullanıcı - TurelFide{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-user-plus me-2"></i>Yeni Kullanıcı Oluştur</h2>
+                    <p class="text-muted">Sistem için yeni kullanıcı hesabı oluşturun</p>
+                </div>
+                <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Geri Dön
+                </a>
+            </div>
+
+            <!-- Form Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-form me-2"></i>Kullanıcı Bilgileri
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="createUserForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Personal Information -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-user me-2"></i>Kişisel Bilgiler
+                                </h6>
+                                
+                                <div class="mb-3">
+                                    <label for="first_name" class="form-label">Ad <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="last_name" class="form-label">Soyad <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="phone_number" class="form-label">Telefon <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">+90</span>
+                                        <input type="tel" 
+                                               class="form-control" 
+                                               id="phone_number" 
+                                               name="phone_number" 
+                                               placeholder="5XX XXX XX XX"
+                                               pattern="5[0-9]{9}"
+                                               maxlength="10"
+                                               required>
+                                    </div>
+                                    <div class="form-text">Örnek: 5551234567</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">E-posta</label>
+                                    <input type="email" class="form-control" id="email" name="email">
+                                    <div class="form-text">İsteğe bağlı</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Account Information -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-cog me-2"></i>Hesap Bilgileri
+                                </h6>
+                                
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Kullanıcı Adı <span class="text-danger">*</span></label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="username" 
+                                           name="username" 
+                                           pattern="[a-zA-Z0-9_]+"
+                                           required>
+                                    <div class="form-text">Sadece harf, rakam ve alt çizgi kullanın</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="role" class="form-label">Rol <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="role" name="role" required>
+                                        <option value="">Rol seçiniz...</option>
+                                        {% for role_code, role_name in roles %}
+                                        <option value="{{ role_code }}">{{ role_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <!-- Role Description -->
+                                <div class="alert alert-info" id="roleDescription" style="display: none;">
+                                    <h6><i class="fas fa-info-circle me-2"></i>Rol Açıklaması</h6>
+                                    <p class="mb-0" id="roleDescriptionText"></p>
+                                </div>
+                                
+                                <!-- PIN Info -->
+                                <div class="alert alert-success">
+                                    <h6><i class="fas fa-key me-2"></i>PIN Kodu</h6>
+                                    <p class="mb-0">
+                                        Kullanıcı oluşturulduktan sonra otomatik olarak 4 haneli benzersiz bir PIN kodu üretilecektir.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Form Actions -->
+                        <div class="row">
+                            <div class="col-12">
+                                <hr>
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>İptal
+                                    </a>
+                                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                                        <span class="btn-text">
+                                            <i class="fas fa-save me-2"></i>Kullanıcı Oluştur
+                                        </span>
+                                        <span class="loading">
+                                            <i class="fas fa-spinner fa-spin me-2"></i>Oluşturuluyor...
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    const form = $('#createUserForm');
+    const submitBtn = $('#submitBtn');
+    const phoneInput = $('#phone_number');
+    const usernameInput = $('#username');
+    const roleSelect = $('#role');
+    const roleDescription = $('#roleDescription');
+    const roleDescriptionText = $('#roleDescriptionText');
+    
+    // Role descriptions
+    const roleDescriptions = {
+        'admin': 'Tüm sistem fonksiyonlarına erişim. Kullanıcı yönetimi, sistem ayarları ve tüm modüller.',
+        'readonly': 'Sadece görüntüleme yetkisi. Tüm verilere erişim ancak değişiklik yapamaz.',
+        'product_manager': 'Ürün kataloğu yönetimi. Ürün ekleme, düzenleme ve sipariş takibi.',
+        'plant_manager': 'Ekim süreçleri yönetimi. Ekim planlaması ve personel koordinasyonu.',
+        'plant_personel': 'Ekim işlemleri. Saha çalışmaları ve rapor giriş yetkisi.',
+        'seed_manager': 'Aşı süreçleri yönetimi. Aşı planlaması ve personel koordinasyonu.',
+        'seed_personel': 'Aşılama işlemleri. Aşı uygulaması ve rapor giriş yetkisi.',
+        'finance_personel': 'Mali işlemler. Fatura, ödeme ve finansal rapor yetkisi.',
+        'shipping_personel': 'Sevkiyat işlemleri. Teslimat ve kargo takip yetkisi.'
+    };
+    
+    // Phone number formatting
+    phoneInput.on('input', function() {
+        let value = $(this).val().replace(/\D/g, '');
+        if (value.length > 10) {
+            value = value.substring(0, 10);
+        }
+        $(this).val(value);
+        
+        // Validation feedback
+        if (value.length === 10 && value.startsWith('5')) {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        } else if (value.length > 0) {
+            $(this).removeClass('is-valid').addClass('is-invalid');
+        } else {
+            $(this).removeClass('is-valid is-invalid');
+        }
+    });
+    
+    // Username formatting and availability check
+    usernameInput.on('input', function() {
+        let value = $(this).val().toLowerCase().replace(/[^a-z0-9_]/g, '');
+        $(this).val(value);
+        
+        if (value.length >= 3) {
+            // You can add AJAX username availability check here
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        } else if (value.length > 0) {
+            $(this).removeClass('is-valid').addClass('is-invalid');
+        } else {
+            $(this).removeClass('is-valid is-invalid');
+        }
+    });
+    
+    // Role description
+    roleSelect.on('change', function() {
+        const selectedRole = $(this).val();
+        if (selectedRole && roleDescriptions[selectedRole]) {
+            roleDescriptionText.text(roleDescriptions[selectedRole]);
+            roleDescription.slideDown();
+        } else {
+            roleDescription.slideUp();
+        }
+    });
+    
+    // Auto-generate username from name
+    $('#first_name, #last_name').on('input', function() {
+        const firstName = $('#first_name').val().toLowerCase();
+        const lastName = $('#last_name').val().toLowerCase();
+        
+        if (firstName && lastName && !usernameInput.val()) {
+            // Generate username: first letter of name + lastname
+            const generatedUsername = (firstName.charAt(0) + lastName).replace(/[^a-z0-9]/g, '');
+            usernameInput.val(generatedUsername);
+            usernameInput.trigger('input');
+        }
+    });
+    
+    // Form submission
+    form.on('submit', function(e) {
+        e.preventDefault();
+        
+        // Basic validation
+        const requiredFields = ['first_name', 'last_name', 'username', 'phone_number', 'role'];
+        let hasErrors = false;
+        
+        requiredFields.forEach(field => {
+            const input = $(`#${field}`);
+            if (!input.val().trim()) {
+                input.addClass('is-invalid');
+                hasErrors = true;
+            } else {
+                input.removeClass('is-invalid');
+            }
+        });
+        
+        // Phone validation
+        const phoneValue = phoneInput.val();
+        if (phoneValue.length !== 10 || !phoneValue.startsWith('5')) {
+            phoneInput.addClass('is-invalid');
+            hasErrors = true;
+        }
+        
+        if (hasErrors) {
+            showNotification('Lütfen tüm gerekli alanları doğru şekilde doldurun', 'error');
+            return;
+        }
+        
+        setButtonLoading(submitBtn, true);
+        
+        // Submit form normally (Django will handle it)
+        this.submit();
+    });
+    
+    // Focus first input
+    $('#first_name').focus();
+});
+</script>
+{% endblock %} 
